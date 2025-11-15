@@ -1,87 +1,117 @@
+// main.cpp - RAINIER++ main entry point with JSON config support
 #include "Config.h"
 #include "core/Nucleus.h"
 #include "simulation/DecaySimulator.h"
 #include "io/OutputManager.h"
 #include <iostream>
-#include <exception>
+#include <string>
+#include <stdexcept>
 
 using namespace rainier;
 
-void printHeader() {
+void printBanner() {
     std::cout << "\n";
     std::cout << "╔════════════════════════════════════════════════════════╗\n";
-    std::cout << "║                                                        ║\n";
-    std::cout << "║   RAINIER 2.0 - Modern C++ Edition                    ║\n";
-    std::cout << "║                                                        ║\n";
-    std::cout << "║   Randomizer of Assorted Initial Nuclear              ║\n";
-    std::cout << "║   Intensities and Emissions of Radiation              ║\n";
-    std::cout << "║                                                        ║\n";
+    std::cout << "║   RAINIER++ - Modern C++ Edition                      ║\n";
+    std::cout << "║   Nuclear Decay Cascade Monte Carlo Simulation        ║\n";
     std::cout << "╚════════════════════════════════════════════════════════╝\n";
     std::cout << "\n";
 }
 
-int main(int argc, char* argv[]) {
-    printHeader();
+void printUsage(const char* programName) {
+    std::cout << "Usage: " << programName << " [config_file]\n";
+    std::cout << "\n";
+    std::cout << "Arguments:\n";
+    std::cout << "  config_file  Path to JSON configuration file (default: config/example.json)\n";
+    std::cout << "\n";
+    std::cout << "Examples:\n";
+    std::cout << "  " << programName << "                    # Use default config\n";
+    std::cout << "  " << programName << " my_config.json    # Use custom config\n";
+    std::cout << "\n";
+}
 
-    std::string configFile = "config.json";
-    int runNumber = 1;
-
-    if (argc > 1) configFile = argv[1];
-    if (argc > 2) runNumber = std::stoi(argv[2]);
-
+int main(int argc, char** argv) {
+    printBanner();
+    
+    // Determine config file
+    std::string configFile = "config/example.json";
+    if (argc > 1) {
+        if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
+            printUsage(argv[0]);
+            return 0;
+        }
+        configFile = argv[1];
+    }
+    
     try {
+        // Load configuration
         std::cout << "Loading configuration from: " << configFile << "\n";
-        Config config;
-        try {
-            config = Config::loadFromFile(configFile);
-        } catch (const std::exception&) {
-            std::cout << "Config file not found. Using defaults.\n";
-            config = Config::createDefault(60, 144);
-        }
-
-        std::string errorMsg;
-        if (!config.validate(errorMsg)) {
-            std::cerr << "Config validation failed: " << errorMsg << "\n";
-            return 1;
-        }
-
+        Config config = Config::loadFromFile(configFile);
         config.print();
-
-        std::cout << "=== Initializing Nucleus ===\n";
-        Nucleus nucleus(config.nucleus.Z, config.nucleus.A);
-        nucleus.setSn(config.nucleus.Sn);
-
-        nucleus.loadDiscreteLevels(config.nucleus.levelsFile, 20);
-        nucleus.printSummary();
-
-        OutputManager output(config, runNumber);
-
-        std::cout << "\n=== Starting Simulations ===\n";
-        std::cout << "Realizations: " << config.simulation.numRealizations << "\n";
-        std::cout << "Events per realization: " << config.simulation.eventsPerRealization << "\n\n";
-
-        for (int real = 0; real < config.simulation.numRealizations; ++real) {
-            std::cout << "Realization " << real + 1 << " / " 
-                      << config.simulation.numRealizations << "\n";
-
-            nucleus.buildContinuumLevels(config, real);
-
-            DecaySimulator simulator(nucleus, config, real);
-            simulator.run();
-
-            output.saveRealization(real, simulator);
-            std::cout << "  Completed.\n\n";
+        
+        // Initialize nucleus
+        std::cout << "═══ Initializing Nucleus ═══\n";
+        Nucleus nucleus(config.nucleus.Z, config.nucleus.A, config);
+        
+        std::cout << "Creating " << nucleus.getNumDiscreteLevels() 
+                  << " discrete levels...\n";
+        std::cout << "Critical energy (Ecrit): " 
+                  << nucleus.getCriticalEnergy() << " MeV\n";
+        
+        // Create output manager
+        int runNumber = 1; // Could be passed as argument
+        OutputManager outputMgr(config, runNumber);
+        outputMgr.initialize();
+        
+        // Create simulator
+        DecaySimulator simulator(config, nucleus, outputMgr);
+        
+        // Run simulation
+        std::cout << "\n═══ Starting Simulations ═══\n";
+        std::cout << "Population mode: ";
+        switch(config.initialExcitation.mode) {
+            case Config::InitialExcitationConfig::Mode::SINGLE:
+                std::cout << "SINGLE (E=" << config.initialExcitation.excitationEnergy 
+                         << " MeV, J=" << config.initialExcitation.spin << ")\n";
+                break;
+            case Config::InitialExcitationConfig::Mode::SELECT:
+                std::cout << "SELECT (Beta-decay-like)\n";
+                break;
+            case Config::InitialExcitationConfig::Mode::SPREAD:
+                std::cout << "SPREAD (E=" << config.initialExcitation.meanEnergy 
+                         << " ± " << config.initialExcitation.energySpread << " MeV)\n";
+                break;
+            case Config::InitialExcitationConfig::Mode::FULL_REACTION:
+                std::cout << "FULL_REACTION (TALYS population)\n";
+                break;
         }
-
-        output.finalize();
-
-        std::cout << "=== Simulation Complete ===\n";
-        std::cout << "This is a STUB implementation - physics models need completion\n\n";
-
+        
+        std::cout << "Realizations: " << config.simulation.numRealizations << "\n";
+        std::cout << "Events per realization: " << config.simulation.eventsPerRealization << "\n";
+        std::cout << "\n";
+        
+        simulator.run();
+        
+        // Finalize output
+        std::cout << "\n═══ Finalizing ═══\n";
+        outputMgr.finalize();
+        
+        std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
+        std::cout << "║   Simulation Complete                                 ║\n";
+        std::cout << "╚════════════════════════════════════════════════════════╝\n";
+        std::cout << "\n";
+        std::cout << "Output files:\n";
+        std::cout << "  - " << config.output.outputFile << " (ROOT file)\n";
+        std::cout << "  - " << config.output.paramFile << " (parameters)\n";
+        std::cout << "\n";
+        
+        return 0;
+        
     } catch (const std::exception& e) {
-        std::cerr << "\nError: " << e.what() << "\n";
+        std::cerr << "\n╔════════════════════════════════════════════════════════╗\n";
+        std::cerr << "║   ERROR                                               ║\n";
+        std::cerr << "╚════════════════════════════════════════════════════════╝\n";
+        std::cerr << "\nError: " << e.what() << "\n\n";
         return 1;
     }
-
-    return 0;
 }

@@ -5,14 +5,94 @@
     "Sn": 7.0,
     "levelsFile": "levels/z060.dat"
   },
+  
+  "levelDensity": {
+    "model": "BSFG",
+    "a": 15.0,
+    "E1": 1.0,
+    "T": 0.5,
+    "E0": 0.0,
+    "useEnergyDependentA": true,
+    "aAsymptotic": 15.0,
+    "shellCorrectionW": 5.0,
+    "dampingGamma": 0.05
+  },
+  
+  "spinCutoff": {
+    "model": "TALYS",
+    "spinCutoffD": 3.0,
+    "Ed": 2.0
+  },
+  
+  "gammaStrength": {
+    "e1Model": "GEN_LORENTZ",
+    "e1Resonances": [
+      {
+        "energy": 15.0,
+        "width": 5.0,
+        "sigma": 300.0
+      }
+    ],
+    "constantT": 0.5,
+    "m1Model": "STD_LORENTZ",
+    "m1Resonances": [
+      {
+        "energy": 7.0,
+        "width": 4.0,
+        "sigma": 1.0
+      }
+    ],
+    "e2Model": "STD_LORENTZ",
+    "e2Energy": 12.0,
+    "e2Width": 4.0,
+    "e2Sigma": 5.0
+  },
+  
+  "initialExcitation": {
+    "mode": "SPREAD",
+    "excitationEnergy": 8.0,
+    "spin": 0.5,
+    "parity": 1,
+    "meanEnergy": 8.0,
+    "energySpread": 0.5
+  },
+  
   "simulation": {
     "numRealizations": 1,
-    "eventsPerRealization": 10000,
-    "updateInterval": 10,
-    "useParallel": false
+    "eventsPerRealization": 1000,
+    "updateInterval": 100,
+    "saveInterval": 10000,
+    "useParallel": false,
+    "randomSeed": 12345
   },
+  
+  "continuum": {
+    "distribution": "POISSON",
+    "energySpacing": 0.1,
+    "forceBinNumber": false,
+    "numBins": 100,
+    "maxDiscreteLevel": 20
+  },
+  
+  "internalConversion": {
+    "enabled": true,
+    "model": "BRICC",
+    "briccModel": "F"
+  },
+  
+  "parity": {
+    "model": "ENERGY_DEPENDENT",
+    "parC": 0.5,
+    "parD": 2.0
+  },
+  
   "output": {
     "outputFile": "output.root",
-    "paramFile": "parameters.dat"
+    "paramFile": "parameters.dat",
+    "saveTree": true,
+    "saveLevelPopulations": true,
+    "gammaSpectrumBins": 1000,
+    "maxGammaEnergy": 20.0,
+    "maxPlotSpin": 10.0
   }
 }
