@@ -1,6 +1,8 @@
-# RAINIER 2.0 - Modern C++ Edition
+# RAINIER++ - Modern C++ Edition
 
-Complete rewrite of RAINIER in modern C++ with improved structure and maintainability.
+Complete rewrite of RAINIER in modern C++ with improved structure and maintainability. This is based on the original RAINIER.C by Leo Kirsch, which came in a single C source file. Leo Kirsch did a fantastic job and many people use the code to simulate level schemes and decays of nuclei via statistical models. However, the code was difficult to understand and maintain for other people, so here is an attempt to make RAINIER ready for the future.  
+
+I used Claude Sonet 4.5 to translate RAINIER into C++. 
 
 ## Quick Start
 
