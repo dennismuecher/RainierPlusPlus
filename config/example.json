@@ -1,0 +1,18 @@
+{
+  "nucleus": {
+    "Z": 60,
+    "A": 144,
+    "Sn": 7.0,
+    "levelsFile": "levels/z060.dat"
+  },
+  "simulation": {
+    "numRealizations": 1,
+    "eventsPerRealization": 10000,
+    "updateInterval": 10,
+    "useParallel": false
+  },
+  "output": {
+    "outputFile": "output.root",
+    "paramFile": "parameters.dat"
+  }
+}
