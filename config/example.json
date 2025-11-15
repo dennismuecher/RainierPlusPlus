@@ -1,4 +1,7 @@
 {
+  "_comment": "RAINIER++ Configuration - All options visible",
+  "_usage": "Set the main 'mode' or 'model' field, parameters for inactive options are ignored",
+  
   "nucleus": {
     "Z": 60,
     "A": 144,
@@ -6,65 +9,109 @@
     "levelsFile": "levels/z060.dat"
   },
   
+  "_INITIAL_EXCITATION": "════════════════════════════════════════",
+  "_modes": "SINGLE, SELECT, SPREAD, FULL_REACTION",
+  
+  "initialExcitation": {
+    "mode": "SINGLE",
+    
+    "_SINGLE_parameters": "─── For mode: SINGLE (DICEBOX-like) ───",
+    "SINGLE_excitationEnergy": 8.0,
+    "SINGLE_spin": 0.5,
+    "SINGLE_parity": 1,
+    "_SINGLE_note": "parity: 1=positive, 0=negative",
+    
+    "_SELECT_parameters": "─── For mode: SELECT (Beta-decay-like) ───",
+    "SELECT_states": [
+      {"energy": 2.5, "spin": 1.0, "parity": 0, "branchingRatio": 0.7},
+      {"energy": 3.0, "spin": 2.0, "parity": 0, "branchingRatio": 0.3}
+    ],
+    "_SELECT_note": "Branching ratios must sum to 1.0",
+    
+    "_SPREAD_parameters": "─── For mode: SPREAD ((n,γ)-like) ───",
+    "SPREAD_meanEnergy": 8.0,
+    "SPREAD_energySpread": 0.5,
+    "_SPREAD_note": "energySpread is Gaussian FWHM in MeV",
+    
+    "_FULL_REACTION_parameters": "─── For mode: FULL_REACTION (TALYS) ───",
+    "FULL_REACTION_populationFile": "talys_population.dat"
+  },
+  
+  "_LEVEL_DENSITY": "════════════════════════════════════════",
+  "_LD_models": "BSFG, CTM, TABLE, USER_DEFINED",
+  
   "levelDensity": {
     "model": "BSFG",
-    "a": 15.0,
-    "E1": 1.0,
-    "T": 0.5,
-    "E0": 0.0,
-    "useEnergyDependentA": true,
-    "aAsymptotic": 15.0,
-    "shellCorrectionW": 5.0,
-    "dampingGamma": 0.05
+    
+    "_BSFG_parameters": "─── For model: BSFG ───",
+    "BSFG_a": 15.0,
+    "BSFG_E1": 1.0,
+    "BSFG_useEnergyDependent": true,
+    "BSFG_aAsymptotic": 15.0,
+    "BSFG_shellCorrection": 5.0,
+    "BSFG_damping": 0.05,
+    "_BSFG_formula": "a(E) = ã[1 + (W/E)(1 - exp(-γE))]",
+    
+    "_CTM_parameters": "─── For model: CTM ───",
+    "CTM_T": 0.5,
+    "CTM_E0": 0.0,
+    "_CTM_formula": "ρ(E) ∝ exp((E-E0)/T)",
+    
+    "_TABLE_parameters": "─── For model: TABLE ───",
+    "TABLE_file": "level_density.dat"
   },
+  
+  "_SPIN_CUTOFF": "════════════════════════════════════════",
+  "_SC_models": "VON_EGIDY_05, VON_EGIDY_09, TALYS, SINGLE_PARTICLE, RIGID_SPHERE",
   
   "spinCutoff": {
     "model": "TALYS",
-    "spinCutoffD": 3.0,
-    "Ed": 2.0
+    
+    "_TALYS_parameters": "─── For model: TALYS ───",
+    "TALYS_spinCutoffD": 3.0,
+    "TALYS_Ed": 2.0,
+    
+    "_VON_EGIDY_note": "No parameters needed for VON_EGIDY models"
   },
   
+  "_GAMMA_STRENGTH": "════════════════════════════════════════",
+  
   "gammaStrength": {
+    "_E1_models": "GEN_LORENTZ, EGLO, KMF, KOP_CHRIEN, STD_LORENTZ",
     "e1Model": "GEN_LORENTZ",
     "e1Resonances": [
-      {
-        "energy": 15.0,
-        "width": 5.0,
-        "sigma": 300.0
-      }
+      {"energy": 15.0, "width": 5.0, "sigma": 300.0}
     ],
-    "constantT": 0.5,
+    "e1_constantT": 0.5,
+    "_e1_note": "All models use resonances, constantT only for GEN_LORENTZ/EGLO",
+    
+    "_M1_models": "STD_LORENTZ, SINGLE_PARTICLE",
     "m1Model": "STD_LORENTZ",
     "m1Resonances": [
-      {
-        "energy": 7.0,
-        "width": 4.0,
-        "sigma": 1.0
-      }
+      {"energy": 7.0, "width": 4.0, "sigma": 1.0}
     ],
+    
+    "_E2_models": "STD_LORENTZ, SINGLE_PARTICLE",
     "e2Model": "STD_LORENTZ",
     "e2Energy": 12.0,
     "e2Width": 4.0,
     "e2Sigma": 5.0
   },
   
-  "initialExcitation": {
-    "mode": "SPREAD",
-    "excitationEnergy": 8.0,
-    "spin": 0.5,
-    "parity": 1,
-    "meanEnergy": 8.0,
-    "energySpread": 0.5
+  "_PARITY": "════════════════════════════════════════",
+  "_parity_models": "EQUIPARTITION, ENERGY_DEPENDENT",
+  
+  "parity": {
+    "model": "ENERGY_DEPENDENT",
+    
+    "_ENERGY_DEPENDENT_parameters": "─── For model: ENERGY_DEPENDENT ───",
+    "parC": 0.5,
+    "parD": 2.0,
+    "_formula": "P(π=+)/P(π=-) = exp[parC × (E - parD)]"
   },
   
-  "simulation": {
-    "numRealizations": 3,
-    "eventsPerRealization": 100,
-    "updateInterval": 100,
-    "saveInterval": 10000,
-    "useParallel": false,
-    "randomSeed": 12345
-  },
+  "_CONTINUUM": "════════════════════════════════════════",
+  "_continuum_distributions": "POISSON, WIGNER",
   
   "continuum": {
     "distribution": "POISSON",
@@ -74,17 +121,28 @@
     "maxDiscreteLevel": 20
   },
   
+  "_INTERNAL_CONVERSION": "════════════════════════════════════════",
+  
   "internalConversion": {
     "enabled": true,
     "model": "BRICC",
-    "briccModel": "F"
+    "briccModel": "F",
+    "_briccModels": "F=Frozen, R=Relativistic, S=Screened",
+    "_TABLE_file": "icc_table.dat (if model is TABLE)"
   },
   
-  "parity": {
-    "model": "ENERGY_DEPENDENT",
-    "parC": 0.5,
-    "parD": 2.0
+  "_SIMULATION": "════════════════════════════════════════",
+  
+  "simulation": {
+    "numRealizations": 1,
+    "eventsPerRealization": 1000,
+    "updateInterval": 100,
+    "saveInterval": 10000,
+    "useParallel": false,
+    "randomSeed": 12345
   },
+  
+  "_OUTPUT": "════════════════════════════════════════",
   
   "output": {
     "outputFile": "output.root",
