@@ -83,18 +83,21 @@ int main(int argc, char** argv) {
                 std::cout << "FULL_REACTION (TALYS population)\n";
                 break;
         }
-        
-        std::cout << "Realizations: " << config.simulation.numRealizations << "\n";
-        std::cout << "Events per realization: " << config.simulation.eventsPerRealization << "\n";
-        std::cout << "\n";
 
 		for (int real = 0; real < config.simulation.numRealizations; ++real) {
+		    std::cout << "Realization " << real + 1 << " / " 
+		              << config.simulation.numRealizations << "\n";
+
+		    nucleus.buildContinuumLevels(config, real);
+
 		    DecaySimulator simulator(nucleus, config, real);
 		    simulator.run();
+
+		    outputMgr.saveRealization(real, simulator);
+		    std::cout << "  Completed.\n\n";
 		}
 		
-        // Run simulation
-        simulator.run();
+		
         
         // Finalize output
         std::cout << "\n═══ Finalizing ═══\n";
