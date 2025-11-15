@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
         
         // Initialize nucleus
         std::cout << "═══ Initializing Nucleus ═══\n";
-        Nucleus nucleus(config.nucleus.Z, config.nucleus.A, config);
+        Nucleus nucleus(config.nucleus.Z, config.nucleus.A);
         
         std::cout << "Creating " << nucleus.getNumDiscreteLevels() 
                   << " discrete levels...\n";
@@ -61,15 +61,13 @@ int main(int argc, char** argv) {
         // Create output manager
         int runNumber = 1; // Could be passed as argument
         OutputManager outputMgr(config, runNumber);
-        outputMgr.initialize();
         
-        // Create simulator
-        DecaySimulator simulator(config, nucleus, outputMgr);
-        
-        // Run simulation
-        std::cout << "\n═══ Starting Simulations ═══\n";
+      
+		// Run simulation
+		std::cout << "\n═══ Starting Simulations ═══\n";
         std::cout << "Population mode: ";
-        switch(config.initialExcitation.mode) {
+        
+		switch(config.initialExcitation.mode) {
             case Config::InitialExcitationConfig::Mode::SINGLE:
                 std::cout << "SINGLE (E=" << config.initialExcitation.excitationEnergy 
                          << " MeV, J=" << config.initialExcitation.spin << ")\n";
@@ -89,7 +87,13 @@ int main(int argc, char** argv) {
         std::cout << "Realizations: " << config.simulation.numRealizations << "\n";
         std::cout << "Events per realization: " << config.simulation.eventsPerRealization << "\n";
         std::cout << "\n";
-        
+
+		for (int real = 0; real < config.simulation.numRealizations; ++real) {
+		    DecaySimulator simulator(nucleus, config, real);
+		    simulator.run();
+		}
+		
+        // Run simulation
         simulator.run();
         
         // Finalize output
