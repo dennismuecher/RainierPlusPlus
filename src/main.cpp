@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     printBanner();
     
     // Determine config file
-    std::string configFile = "config/example.json";
+    std::string configFile = "../config/example.json";
     if (argc > 1) {
         if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
             printUsage(argv[0]);
