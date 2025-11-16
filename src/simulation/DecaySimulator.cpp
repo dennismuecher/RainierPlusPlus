@@ -12,15 +12,16 @@
 #include <algorithm>
 
 namespace rainier {
-
+	
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
-    : nucleus_(nucleus), config_(config), realization_(realization), numStuckEvents_(0) {
-    
-		transitionPool_(2000) {  // Pre-allocate 2000 transitions
+	    : nucleus_(nucleus), 
+	      config_(config), 
+	      realization_(realization), 
+	      numStuckEvents_(0),
+	      transitionPool_(2000) {  // Pre-allocate 2000 transitions
     
 	// Pre-allocate transition buffer
 	transitionBuffer_.reserve(500);
-	
     // Initialize random number generator
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
