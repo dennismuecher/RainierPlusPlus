@@ -309,17 +309,12 @@ double DecaySimulator::calculateWidthsOptimized(const std::shared_ptr<Level>& le
                 
                 if (binIndex >= static_cast<int>(continuumWidths_.size())) continue;
                 
-                // Apply Porter-Thomas to EACH level in bin (original lines 548-556)
-                // Use ranStr directly - no need to store state
-                double totalStrengthForBin = 0.0;
-                for (int j = 0; j < nLevelsInBin; ++j) {
-                    double g = ranStr.Gaus(0.0, 1.0);
-                    double ptFactor = g * g;
-                    totalStrengthForBin += strength * ptFactor * (1.0 + icc);
-                }
+                // Calculate Porter-Thomas ONCE for the entire bin (not per level!)
+                double g = ranStr.Gaus(0.0, 1.0);
+                double ptFactor = g * g;
                 
-                // Width for this bin (original line 558)
-                double widthForBin = totalStrengthForBin * levelSpacing;
+                // Width for entire bin (strength * spacing * PT * ICC * number_of_levels)
+                double widthForBin = strength * levelSpacing * ptFactor * (1.0 + icc) * nLevelsInBin;
                 
                 if (widthForBin > 0 && binIndex < static_cast<int>(continuumWidths_.size())) {
                     continuumWidths_[binIndex] = widthForBin;
