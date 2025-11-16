@@ -1,0 +1,844 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7D5E61192EC9873D00042715 /* OutputManager.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60B42EC9873D00042715 /* OutputManager.cpp.o.d */; };
+		7D5E611A2EC9873D00042715 /* main.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E609F2EC9873D00042715 /* main.cpp.o.d */; };
+		7D5E611B2EC9873D00042715 /* RAINIER.C in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E610D2EC9873D00042715 /* RAINIER.C */; };
+		7D5E611C2EC9873D00042715 /* LevelDensity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E610A2EC9873D00042715 /* LevelDensity.cpp */; };
+		7D5E611D2EC9873D00042715 /* Nucleus.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60AF2EC9873D00042715 /* Nucleus.cpp.o.d */; };
+		7D5E611E2EC9873D00042715 /* GammaStrength.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61092EC9873D00042715 /* GammaStrength.cpp */; };
+		7D5E611F2EC9873D00042715 /* CMakeCXXCompilerId.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60962EC9873D00042715 /* CMakeCXXCompilerId.cpp */; };
+		7D5E61202EC9873D00042715 /* flags.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60A82EC9873D00042715 /* flags.make */; };
+		7D5E61212EC9873D00042715 /* Config.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61142EC9873D00042715 /* Config.cpp */; };
+		7D5E61222EC9873D00042715 /* SpinCutoff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E610B2EC9873D00042715 /* SpinCutoff.cpp */; };
+		7D5E61232EC9873D00042715 /* LevelFileReader.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60B22EC9873D00042715 /* LevelFileReader.cpp.o.d */; };
+		7D5E61242EC9873D00042715 /* depend.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60A62EC9873D00042715 /* depend.make */; };
+		7D5E61252EC9873D00042715 /* flags.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60CD2EC9873D00042715 /* flags.make */; };
+		7D5E61262EC9873D00042715 /* apple-sdk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60952EC9873D00042715 /* apple-sdk.cpp */; };
+		7D5E61272EC9873D00042715 /* OutputManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61072EC9873D00042715 /* OutputManager.cpp */; };
+		7D5E61282EC9873D00042715 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61152EC9873D00042715 /* main.cpp */; };
+		7D5E61292EC9873D00042715 /* DecaySimulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61112EC9873D00042715 /* DecaySimulator.cpp */; };
+		7D5E612A2EC9873D00042715 /* build.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60C52EC9873D00042715 /* build.make */; };
+		7D5E612B2EC9873D00042715 /* build.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60A12EC9873D00042715 /* build.make */; };
+		7D5E612C2EC9873D00042715 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60DD2EC9873D00042715 /* Makefile */; };
+		7D5E612D2EC9873D00042715 /* depend.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60CB2EC9873D00042715 /* depend.make */; };
+		7D5E612E2EC9873D00042715 /* GammaStrength.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60B72EC9873D00042715 /* GammaStrength.cpp.o.d */; };
+		7D5E612F2EC9873D00042715 /* Level.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61032EC9873D00042715 /* Level.cpp */; };
+		7D5E61302EC9873D00042715 /* SpinCutoff.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60BB2EC9873D00042715 /* SpinCutoff.cpp.o.d */; };
+		7D5E61312EC9873D00042715 /* DecaySimulator.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60C02EC9873D00042715 /* DecaySimulator.cpp.o.d */; };
+		7D5E61322EC9873D00042715 /* CascadeEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61102EC9873D00042715 /* CascadeEvent.cpp */; };
+		7D5E61332EC9873D00042715 /* CascadeEvent.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60BE2EC9873D00042715 /* CascadeEvent.cpp.o.d */; };
+		7D5E61342EC9873D00042715 /* LevelDensity.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60B92EC9873D00042715 /* LevelDensity.cpp.o.d */; };
+		7D5E61352EC9873D00042715 /* Nucleus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61042EC9873D00042715 /* Nucleus.cpp */; };
+		7D5E61362EC9873D00042715 /* compiler_depend.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60C92EC9873D00042715 /* compiler_depend.make */; };
+		7D5E61372EC9873D00042715 /* progress.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60AA2EC9873D00042715 /* progress.make */; };
+		7D5E61382EC9873D00042715 /* Config.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60C32EC9873D00042715 /* Config.cpp.o.d */; };
+		7D5E61392EC9873D00042715 /* LevelFileReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E61062EC9873D00042715 /* LevelFileReader.cpp */; };
+		7D5E613A2EC9873D00042715 /* progress.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60CF2EC9873D00042715 /* progress.make */; };
+		7D5E613B2EC9873D00042715 /* compiler_depend.make in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60A42EC9873D00042715 /* compiler_depend.make */; };
+		7D5E613C2EC9873D00042715 /* Level.cpp.o.d in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E60AD2EC9873D00042715 /* Level.cpp.o.d */; };
+		7D5E613D2EC9873D00042715 /* Level.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60AC2EC9873D00042715 /* Level.cpp.o */; };
+		7D5E613E2EC9873D00042715 /* DecaySimulator.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60BF2EC9873D00042715 /* DecaySimulator.cpp.o */; };
+		7D5E613F2EC9873D00042715 /* main.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E609E2EC9873D00042715 /* main.cpp.o */; };
+		7D5E61402EC9873D00042715 /* Config.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60C22EC9873D00042715 /* Config.cpp.o */; };
+		7D5E61412EC9873D00042715 /* LevelDensity.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60B82EC9873D00042715 /* LevelDensity.cpp.o */; };
+		7D5E61422EC9873D00042715 /* librainier_lib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60DC2EC9873D00042715 /* librainier_lib.a */; };
+		7D5E61432EC9873D00042715 /* Nucleus.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60AE2EC9873D00042715 /* Nucleus.cpp.o */; };
+		7D5E61442EC9873D00042715 /* GammaStrength.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60B62EC9873D00042715 /* GammaStrength.cpp.o */; };
+		7D5E61452EC9873D00042715 /* LevelFileReader.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60B12EC9873D00042715 /* LevelFileReader.cpp.o */; };
+		7D5E61462EC9873D00042715 /* CascadeEvent.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60BD2EC9873D00042715 /* CascadeEvent.cpp.o */; };
+		7D5E61472EC9873D00042715 /* OutputManager.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60B32EC9873D00042715 /* OutputManager.cpp.o */; };
+		7D5E61482EC9873D00042715 /* SpinCutoff.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D5E60BA2EC9873D00042715 /* SpinCutoff.cpp.o */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7D5E60872EC9866E00042715 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		7D5E60892EC9866E00042715 /* rainier2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rainier2; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D5E60942EC9873D00042715 /* a.out */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = a.out; sourceTree = "<group>"; };
+		7D5E60952EC9873D00042715 /* apple-sdk.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "apple-sdk.cpp"; sourceTree = "<group>"; };
+		7D5E60962EC9873D00042715 /* CMakeCXXCompilerId.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CMakeCXXCompilerId.cpp; sourceTree = "<group>"; };
+		7D5E60982EC9873D00042715 /* CMakeCXXCompiler.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeCXXCompiler.cmake; sourceTree = "<group>"; };
+		7D5E60992EC9873D00042715 /* CMakeDetermineCompilerABI_CXX.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = CMakeDetermineCompilerABI_CXX.bin; sourceTree = "<group>"; };
+		7D5E609A2EC9873D00042715 /* CMakeSystem.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeSystem.cmake; sourceTree = "<group>"; };
+		7D5E609E2EC9873D00042715 /* main.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = main.cpp.o; sourceTree = "<group>"; };
+		7D5E609F2EC9873D00042715 /* main.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = main.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60A12EC9873D00042715 /* build.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = build.make; sourceTree = "<group>"; };
+		7D5E60A22EC9873D00042715 /* cmake_clean.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_clean.cmake; sourceTree = "<group>"; };
+		7D5E60A32EC9873D00042715 /* compiler_depend.internal */ = {isa = PBXFileReference; lastKnownFileType = text; path = compiler_depend.internal; sourceTree = "<group>"; };
+		7D5E60A42EC9873D00042715 /* compiler_depend.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = compiler_depend.make; sourceTree = "<group>"; };
+		7D5E60A52EC9873D00042715 /* compiler_depend.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; path = compiler_depend.ts; sourceTree = "<group>"; };
+		7D5E60A62EC9873D00042715 /* depend.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = depend.make; sourceTree = "<group>"; };
+		7D5E60A72EC9873D00042715 /* DependInfo.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = DependInfo.cmake; sourceTree = "<group>"; };
+		7D5E60A82EC9873D00042715 /* flags.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = flags.make; sourceTree = "<group>"; };
+		7D5E60A92EC9873D00042715 /* link.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = link.txt; sourceTree = "<group>"; };
+		7D5E60AA2EC9873D00042715 /* progress.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = progress.make; sourceTree = "<group>"; };
+		7D5E60AC2EC9873D00042715 /* Level.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = Level.cpp.o; sourceTree = "<group>"; };
+		7D5E60AD2EC9873D00042715 /* Level.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = Level.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60AE2EC9873D00042715 /* Nucleus.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = Nucleus.cpp.o; sourceTree = "<group>"; };
+		7D5E60AF2EC9873D00042715 /* Nucleus.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = Nucleus.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60B12EC9873D00042715 /* LevelFileReader.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = LevelFileReader.cpp.o; sourceTree = "<group>"; };
+		7D5E60B22EC9873D00042715 /* LevelFileReader.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = LevelFileReader.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60B32EC9873D00042715 /* OutputManager.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = OutputManager.cpp.o; sourceTree = "<group>"; };
+		7D5E60B42EC9873D00042715 /* OutputManager.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = OutputManager.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60B62EC9873D00042715 /* GammaStrength.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = GammaStrength.cpp.o; sourceTree = "<group>"; };
+		7D5E60B72EC9873D00042715 /* GammaStrength.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = GammaStrength.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60B82EC9873D00042715 /* LevelDensity.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = LevelDensity.cpp.o; sourceTree = "<group>"; };
+		7D5E60B92EC9873D00042715 /* LevelDensity.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = LevelDensity.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60BA2EC9873D00042715 /* SpinCutoff.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = SpinCutoff.cpp.o; sourceTree = "<group>"; };
+		7D5E60BB2EC9873D00042715 /* SpinCutoff.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = SpinCutoff.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60BD2EC9873D00042715 /* CascadeEvent.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = CascadeEvent.cpp.o; sourceTree = "<group>"; };
+		7D5E60BE2EC9873D00042715 /* CascadeEvent.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = CascadeEvent.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60BF2EC9873D00042715 /* DecaySimulator.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = DecaySimulator.cpp.o; sourceTree = "<group>"; };
+		7D5E60C02EC9873D00042715 /* DecaySimulator.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = DecaySimulator.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60C22EC9873D00042715 /* Config.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = Config.cpp.o; sourceTree = "<group>"; };
+		7D5E60C32EC9873D00042715 /* Config.cpp.o.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = Config.cpp.o.d; sourceTree = "<group>"; };
+		7D5E60C52EC9873D00042715 /* build.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = build.make; sourceTree = "<group>"; };
+		7D5E60C62EC9873D00042715 /* cmake_clean.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_clean.cmake; sourceTree = "<group>"; };
+		7D5E60C72EC9873D00042715 /* cmake_clean_target.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_clean_target.cmake; sourceTree = "<group>"; };
+		7D5E60C82EC9873D00042715 /* compiler_depend.internal */ = {isa = PBXFileReference; lastKnownFileType = text; path = compiler_depend.internal; sourceTree = "<group>"; };
+		7D5E60C92EC9873D00042715 /* compiler_depend.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = compiler_depend.make; sourceTree = "<group>"; };
+		7D5E60CA2EC9873D00042715 /* compiler_depend.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; path = compiler_depend.ts; sourceTree = "<group>"; };
+		7D5E60CB2EC9873D00042715 /* depend.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = depend.make; sourceTree = "<group>"; };
+		7D5E60CC2EC9873D00042715 /* DependInfo.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = DependInfo.cmake; sourceTree = "<group>"; };
+		7D5E60CD2EC9873D00042715 /* flags.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = flags.make; sourceTree = "<group>"; };
+		7D5E60CE2EC9873D00042715 /* link.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = link.txt; sourceTree = "<group>"; };
+		7D5E60CF2EC9873D00042715 /* progress.make */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = progress.make; sourceTree = "<group>"; };
+		7D5E60D12EC9873D00042715 /* cmake.check_cache */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake.check_cache; sourceTree = "<group>"; };
+		7D5E60D22EC9873D00042715 /* CMakeConfigureLog.yaml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = CMakeConfigureLog.yaml; sourceTree = "<group>"; };
+		7D5E60D32EC9873D00042715 /* CMakeDirectoryInformation.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeDirectoryInformation.cmake; sourceTree = "<group>"; };
+		7D5E60D42EC9873D00042715 /* InstallScripts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = InstallScripts.json; sourceTree = "<group>"; };
+		7D5E60D52EC9873D00042715 /* Makefile.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile.cmake; sourceTree = "<group>"; };
+		7D5E60D62EC9873D00042715 /* Makefile2 */ = {isa = PBXFileReference; lastKnownFileType = text; path = Makefile2; sourceTree = "<group>"; };
+		7D5E60D72EC9873D00042715 /* progress.marks */ = {isa = PBXFileReference; lastKnownFileType = text; path = progress.marks; sourceTree = "<group>"; };
+		7D5E60D82EC9873D00042715 /* TargetDirectories.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TargetDirectories.txt; sourceTree = "<group>"; };
+		7D5E60DA2EC9873D00042715 /* cmake_install.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		7D5E60DB2EC9873D00042715 /* CMakeCache.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeCache.txt; sourceTree = "<group>"; };
+		7D5E60DC2EC9873D00042715 /* librainier_lib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = librainier_lib.a; sourceTree = "<group>"; };
+		7D5E60DD2EC9873D00042715 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		7D5E60DE2EC9873D00042715 /* Param1.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = Param1.dat; sourceTree = "<group>"; };
+		7D5E60DF2EC9873D00042715 /* rainier */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = rainier; sourceTree = "<group>"; };
+		7D5E60E02EC9873D00042715 /* Run1.root */ = {isa = PBXFileReference; lastKnownFileType = file; path = Run1.root; sourceTree = "<group>"; };
+		7D5E60E22EC9873D00042715 /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
+		7D5E60E32EC9873D00042715 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		7D5E60E42EC9873D00042715 /* example.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = example.json; sourceTree = "<group>"; };
+		7D5E60E62EC9873D00042715 /* kirsch_bernstein_rainier.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = kirsch_bernstein_rainier.pdf; sourceTree = "<group>"; };
+		7D5E60E82EC9873D00042715 /* GETTING_STARTED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GETTING_STARTED.md; sourceTree = "<group>"; };
+		7D5E60E92EC9873D00042715 /* IMPLEMENTATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IMPLEMENTATION_GUIDE.md; sourceTree = "<group>"; };
+		7D5E60EA2EC9873D00042715 /* ContinuumLevel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ContinuumLevel.h; sourceTree = "<group>"; };
+		7D5E60EB2EC9873D00042715 /* DiscreteLevel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DiscreteLevel.h; sourceTree = "<group>"; };
+		7D5E60EC2EC9873D00042715 /* Level.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Level.h; sourceTree = "<group>"; };
+		7D5E60ED2EC9873D00042715 /* Nucleus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Nucleus.h; sourceTree = "<group>"; };
+		7D5E60EE2EC9873D00042715 /* Transition.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Transition.h; sourceTree = "<group>"; };
+		7D5E60F02EC9873D00042715 /* LevelFileReader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LevelFileReader.h; sourceTree = "<group>"; };
+		7D5E60F12EC9873D00042715 /* OutputManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OutputManager.h; sourceTree = "<group>"; };
+		7D5E60F32EC9873D00042715 /* GammaStrength.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GammaStrength.h; sourceTree = "<group>"; };
+		7D5E60F42EC9873D00042715 /* LevelDensity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LevelDensity.h; sourceTree = "<group>"; };
+		7D5E60F52EC9873D00042715 /* SpinCutoff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SpinCutoff.h; sourceTree = "<group>"; };
+		7D5E60F72EC9873D00042715 /* CascadeEvent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CascadeEvent.h; sourceTree = "<group>"; };
+		7D5E60F82EC9873D00042715 /* DecaySimulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DecaySimulator.h; sourceTree = "<group>"; };
+		7D5E60FA2EC9873D00042715 /* PhysicsConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PhysicsConstants.h; sourceTree = "<group>"; };
+		7D5E60FC2EC9873D00042715 /* Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Config.h; sourceTree = "<group>"; };
+		7D5E60FE2EC9873D00042715 /* z060.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = z060.dat; sourceTree = "<group>"; };
+		7D5E61002EC9873D00042715 /* PROJECT_STRUCTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROJECT_STRUCTURE.md; sourceTree = "<group>"; };
+		7D5E61012EC9873D00042715 /* rainier2.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = rainier2.xcodeproj; sourceTree = "<group>"; };
+		7D5E61022EC9873D00042715 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		7D5E61032EC9873D00042715 /* Level.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Level.cpp; sourceTree = "<group>"; };
+		7D5E61042EC9873D00042715 /* Nucleus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Nucleus.cpp; sourceTree = "<group>"; };
+		7D5E61062EC9873D00042715 /* LevelFileReader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelFileReader.cpp; sourceTree = "<group>"; };
+		7D5E61072EC9873D00042715 /* OutputManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OutputManager.cpp; sourceTree = "<group>"; };
+		7D5E61092EC9873D00042715 /* GammaStrength.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GammaStrength.cpp; sourceTree = "<group>"; };
+		7D5E610A2EC9873D00042715 /* LevelDensity.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelDensity.cpp; sourceTree = "<group>"; };
+		7D5E610B2EC9873D00042715 /* SpinCutoff.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SpinCutoff.cpp; sourceTree = "<group>"; };
+		7D5E610D2EC9873D00042715 /* RAINIER.C */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RAINIER.C; sourceTree = "<group>"; };
+		7D5E610E2EC9873D00042715 /* settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = settings.h; sourceTree = "<group>"; };
+		7D5E61102EC9873D00042715 /* CascadeEvent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CascadeEvent.cpp; sourceTree = "<group>"; };
+		7D5E61112EC9873D00042715 /* DecaySimulator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DecaySimulator.cpp; sourceTree = "<group>"; };
+		7D5E61142EC9873D00042715 /* Config.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Config.cpp; sourceTree = "<group>"; };
+		7D5E61152EC9873D00042715 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7D5E60862EC9866E00042715 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D5E613D2EC9873D00042715 /* Level.cpp.o in Frameworks */,
+				7D5E613E2EC9873D00042715 /* DecaySimulator.cpp.o in Frameworks */,
+				7D5E613F2EC9873D00042715 /* main.cpp.o in Frameworks */,
+				7D5E61402EC9873D00042715 /* Config.cpp.o in Frameworks */,
+				7D5E61412EC9873D00042715 /* LevelDensity.cpp.o in Frameworks */,
+				7D5E61422EC9873D00042715 /* librainier_lib.a in Frameworks */,
+				7D5E61432EC9873D00042715 /* Nucleus.cpp.o in Frameworks */,
+				7D5E61442EC9873D00042715 /* GammaStrength.cpp.o in Frameworks */,
+				7D5E61452EC9873D00042715 /* LevelFileReader.cpp.o in Frameworks */,
+				7D5E61462EC9873D00042715 /* CascadeEvent.cpp.o in Frameworks */,
+				7D5E61472EC9873D00042715 /* OutputManager.cpp.o in Frameworks */,
+				7D5E61482EC9873D00042715 /* SpinCutoff.cpp.o in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7D5E60802EC9866E00042715 = {
+			isa = PBXGroup;
+			children = (
+				7D5E60E12EC9873D00042715 /* build */,
+				7D5E60E22EC9873D00042715 /* build.sh */,
+				7D5E60E32EC9873D00042715 /* CMakeLists.txt */,
+				7D5E60E52EC9873D00042715 /* config */,
+				7D5E60E72EC9873D00042715 /* docs */,
+				7D5E60E82EC9873D00042715 /* GETTING_STARTED.md */,
+				7D5E60E92EC9873D00042715 /* IMPLEMENTATION_GUIDE.md */,
+				7D5E60FD2EC9873D00042715 /* include */,
+				7D5E60FF2EC9873D00042715 /* levels */,
+				7D5E61002EC9873D00042715 /* PROJECT_STRUCTURE.md */,
+				7D5E61012EC9873D00042715 /* rainier2.xcodeproj */,
+				7D5E61022EC9873D00042715 /* README.md */,
+				7D5E61162EC9873D00042715 /* src */,
+				7D5E608A2EC9866E00042715 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7D5E608A2EC9866E00042715 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60892EC9866E00042715 /* rainier2 */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7D5E60932EC9873D00042715 /* tmp */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = tmp;
+			sourceTree = "<group>";
+		};
+		7D5E60972EC9873D00042715 /* CompilerIdCXX */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60932EC9873D00042715 /* tmp */,
+				7D5E60942EC9873D00042715 /* a.out */,
+				7D5E60952EC9873D00042715 /* apple-sdk.cpp */,
+				7D5E60962EC9873D00042715 /* CMakeCXXCompilerId.cpp */,
+			);
+			path = CompilerIdCXX;
+			sourceTree = "<group>";
+		};
+		7D5E609B2EC9873D00042715 /* 4.1.2 */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60972EC9873D00042715 /* CompilerIdCXX */,
+				7D5E60982EC9873D00042715 /* CMakeCXXCompiler.cmake */,
+				7D5E60992EC9873D00042715 /* CMakeDetermineCompilerABI_CXX.bin */,
+				7D5E609A2EC9873D00042715 /* CMakeSystem.cmake */,
+			);
+			path = 4.1.2;
+			sourceTree = "<group>";
+		};
+		7D5E609C2EC9873D00042715 /* CMakeScratch */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = CMakeScratch;
+			sourceTree = "<group>";
+		};
+		7D5E609D2EC9873D00042715 /* pkgRedirects */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = pkgRedirects;
+			sourceTree = "<group>";
+		};
+		7D5E60A02EC9873D00042715 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E609E2EC9873D00042715 /* main.cpp.o */,
+				7D5E609F2EC9873D00042715 /* main.cpp.o.d */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		7D5E60AB2EC9873D00042715 /* rainier.dir */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60A02EC9873D00042715 /* src */,
+				7D5E60A12EC9873D00042715 /* build.make */,
+				7D5E60A22EC9873D00042715 /* cmake_clean.cmake */,
+				7D5E60A32EC9873D00042715 /* compiler_depend.internal */,
+				7D5E60A42EC9873D00042715 /* compiler_depend.make */,
+				7D5E60A52EC9873D00042715 /* compiler_depend.ts */,
+				7D5E60A62EC9873D00042715 /* depend.make */,
+				7D5E60A72EC9873D00042715 /* DependInfo.cmake */,
+				7D5E60A82EC9873D00042715 /* flags.make */,
+				7D5E60A92EC9873D00042715 /* link.txt */,
+				7D5E60AA2EC9873D00042715 /* progress.make */,
+			);
+			path = rainier.dir;
+			sourceTree = "<group>";
+		};
+		7D5E60B02EC9873D00042715 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60AC2EC9873D00042715 /* Level.cpp.o */,
+				7D5E60AD2EC9873D00042715 /* Level.cpp.o.d */,
+				7D5E60AE2EC9873D00042715 /* Nucleus.cpp.o */,
+				7D5E60AF2EC9873D00042715 /* Nucleus.cpp.o.d */,
+			);
+			path = core;
+			sourceTree = "<group>";
+		};
+		7D5E60B52EC9873D00042715 /* io */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60B12EC9873D00042715 /* LevelFileReader.cpp.o */,
+				7D5E60B22EC9873D00042715 /* LevelFileReader.cpp.o.d */,
+				7D5E60B32EC9873D00042715 /* OutputManager.cpp.o */,
+				7D5E60B42EC9873D00042715 /* OutputManager.cpp.o.d */,
+			);
+			path = io;
+			sourceTree = "<group>";
+		};
+		7D5E60BC2EC9873D00042715 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60B62EC9873D00042715 /* GammaStrength.cpp.o */,
+				7D5E60B72EC9873D00042715 /* GammaStrength.cpp.o.d */,
+				7D5E60B82EC9873D00042715 /* LevelDensity.cpp.o */,
+				7D5E60B92EC9873D00042715 /* LevelDensity.cpp.o.d */,
+				7D5E60BA2EC9873D00042715 /* SpinCutoff.cpp.o */,
+				7D5E60BB2EC9873D00042715 /* SpinCutoff.cpp.o.d */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		7D5E60C12EC9873D00042715 /* simulation */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60BD2EC9873D00042715 /* CascadeEvent.cpp.o */,
+				7D5E60BE2EC9873D00042715 /* CascadeEvent.cpp.o.d */,
+				7D5E60BF2EC9873D00042715 /* DecaySimulator.cpp.o */,
+				7D5E60C02EC9873D00042715 /* DecaySimulator.cpp.o.d */,
+			);
+			path = simulation;
+			sourceTree = "<group>";
+		};
+		7D5E60C42EC9873D00042715 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60B02EC9873D00042715 /* core */,
+				7D5E60B52EC9873D00042715 /* io */,
+				7D5E60BC2EC9873D00042715 /* models */,
+				7D5E60C12EC9873D00042715 /* simulation */,
+				7D5E60C22EC9873D00042715 /* Config.cpp.o */,
+				7D5E60C32EC9873D00042715 /* Config.cpp.o.d */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		7D5E60D02EC9873D00042715 /* rainier_lib.dir */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60C42EC9873D00042715 /* src */,
+				7D5E60C52EC9873D00042715 /* build.make */,
+				7D5E60C62EC9873D00042715 /* cmake_clean.cmake */,
+				7D5E60C72EC9873D00042715 /* cmake_clean_target.cmake */,
+				7D5E60C82EC9873D00042715 /* compiler_depend.internal */,
+				7D5E60C92EC9873D00042715 /* compiler_depend.make */,
+				7D5E60CA2EC9873D00042715 /* compiler_depend.ts */,
+				7D5E60CB2EC9873D00042715 /* depend.make */,
+				7D5E60CC2EC9873D00042715 /* DependInfo.cmake */,
+				7D5E60CD2EC9873D00042715 /* flags.make */,
+				7D5E60CE2EC9873D00042715 /* link.txt */,
+				7D5E60CF2EC9873D00042715 /* progress.make */,
+			);
+			path = rainier_lib.dir;
+			sourceTree = "<group>";
+		};
+		7D5E60D92EC9873D00042715 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E609B2EC9873D00042715 /* 4.1.2 */,
+				7D5E609C2EC9873D00042715 /* CMakeScratch */,
+				7D5E609D2EC9873D00042715 /* pkgRedirects */,
+				7D5E60AB2EC9873D00042715 /* rainier.dir */,
+				7D5E60D02EC9873D00042715 /* rainier_lib.dir */,
+				7D5E60D12EC9873D00042715 /* cmake.check_cache */,
+				7D5E60D22EC9873D00042715 /* CMakeConfigureLog.yaml */,
+				7D5E60D32EC9873D00042715 /* CMakeDirectoryInformation.cmake */,
+				7D5E60D42EC9873D00042715 /* InstallScripts.json */,
+				7D5E60D52EC9873D00042715 /* Makefile.cmake */,
+				7D5E60D62EC9873D00042715 /* Makefile2 */,
+				7D5E60D72EC9873D00042715 /* progress.marks */,
+				7D5E60D82EC9873D00042715 /* TargetDirectories.txt */,
+			);
+			path = CMakeFiles;
+			sourceTree = "<group>";
+		};
+		7D5E60E12EC9873D00042715 /* build */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60D92EC9873D00042715 /* CMakeFiles */,
+				7D5E60DA2EC9873D00042715 /* cmake_install.cmake */,
+				7D5E60DB2EC9873D00042715 /* CMakeCache.txt */,
+				7D5E60DC2EC9873D00042715 /* librainier_lib.a */,
+				7D5E60DD2EC9873D00042715 /* Makefile */,
+				7D5E60DE2EC9873D00042715 /* Param1.dat */,
+				7D5E60DF2EC9873D00042715 /* rainier */,
+				7D5E60E02EC9873D00042715 /* Run1.root */,
+			);
+			path = build;
+			sourceTree = "<group>";
+		};
+		7D5E60E52EC9873D00042715 /* config */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60E42EC9873D00042715 /* example.json */,
+			);
+			path = config;
+			sourceTree = "<group>";
+		};
+		7D5E60E72EC9873D00042715 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60E62EC9873D00042715 /* kirsch_bernstein_rainier.pdf */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
+		7D5E60EF2EC9873D00042715 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60EA2EC9873D00042715 /* ContinuumLevel.h */,
+				7D5E60EB2EC9873D00042715 /* DiscreteLevel.h */,
+				7D5E60EC2EC9873D00042715 /* Level.h */,
+				7D5E60ED2EC9873D00042715 /* Nucleus.h */,
+				7D5E60EE2EC9873D00042715 /* Transition.h */,
+			);
+			path = core;
+			sourceTree = "<group>";
+		};
+		7D5E60F22EC9873D00042715 /* io */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60F02EC9873D00042715 /* LevelFileReader.h */,
+				7D5E60F12EC9873D00042715 /* OutputManager.h */,
+			);
+			path = io;
+			sourceTree = "<group>";
+		};
+		7D5E60F62EC9873D00042715 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60F32EC9873D00042715 /* GammaStrength.h */,
+				7D5E60F42EC9873D00042715 /* LevelDensity.h */,
+				7D5E60F52EC9873D00042715 /* SpinCutoff.h */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		7D5E60F92EC9873D00042715 /* simulation */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60F72EC9873D00042715 /* CascadeEvent.h */,
+				7D5E60F82EC9873D00042715 /* DecaySimulator.h */,
+			);
+			path = simulation;
+			sourceTree = "<group>";
+		};
+		7D5E60FB2EC9873D00042715 /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60FA2EC9873D00042715 /* PhysicsConstants.h */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		7D5E60FD2EC9873D00042715 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60EF2EC9873D00042715 /* core */,
+				7D5E60F22EC9873D00042715 /* io */,
+				7D5E60F62EC9873D00042715 /* models */,
+				7D5E60F92EC9873D00042715 /* simulation */,
+				7D5E60FB2EC9873D00042715 /* utils */,
+				7D5E60FC2EC9873D00042715 /* Config.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		7D5E60FF2EC9873D00042715 /* levels */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E60FE2EC9873D00042715 /* z060.dat */,
+			);
+			path = levels;
+			sourceTree = "<group>";
+		};
+		7D5E61052EC9873D00042715 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E61032EC9873D00042715 /* Level.cpp */,
+				7D5E61042EC9873D00042715 /* Nucleus.cpp */,
+			);
+			path = core;
+			sourceTree = "<group>";
+		};
+		7D5E61082EC9873D00042715 /* io */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E61062EC9873D00042715 /* LevelFileReader.cpp */,
+				7D5E61072EC9873D00042715 /* OutputManager.cpp */,
+			);
+			path = io;
+			sourceTree = "<group>";
+		};
+		7D5E610C2EC9873D00042715 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E61092EC9873D00042715 /* GammaStrength.cpp */,
+				7D5E610A2EC9873D00042715 /* LevelDensity.cpp */,
+				7D5E610B2EC9873D00042715 /* SpinCutoff.cpp */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		7D5E610F2EC9873D00042715 /* orig_code */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E610D2EC9873D00042715 /* RAINIER.C */,
+				7D5E610E2EC9873D00042715 /* settings.h */,
+			);
+			path = orig_code;
+			sourceTree = "<group>";
+		};
+		7D5E61122EC9873D00042715 /* simulation */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E61102EC9873D00042715 /* CascadeEvent.cpp */,
+				7D5E61112EC9873D00042715 /* DecaySimulator.cpp */,
+			);
+			path = simulation;
+			sourceTree = "<group>";
+		};
+		7D5E61132EC9873D00042715 /* utils */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		7D5E61162EC9873D00042715 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				7D5E61052EC9873D00042715 /* core */,
+				7D5E61082EC9873D00042715 /* io */,
+				7D5E610C2EC9873D00042715 /* models */,
+				7D5E610F2EC9873D00042715 /* orig_code */,
+				7D5E61122EC9873D00042715 /* simulation */,
+				7D5E61132EC9873D00042715 /* utils */,
+				7D5E61142EC9873D00042715 /* Config.cpp */,
+				7D5E61152EC9873D00042715 /* main.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		7D5E61172EC9873D00042715 /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7D5E60882EC9866E00042715 /* rainier2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D5E60902EC9866E00042715 /* Build configuration list for PBXNativeTarget "rainier2" */;
+			buildPhases = (
+				7D5E60852EC9866E00042715 /* Sources */,
+				7D5E60862EC9866E00042715 /* Frameworks */,
+				7D5E60872EC9866E00042715 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = rainier2;
+			packageProductDependencies = (
+			);
+			productName = rainier2;
+			productReference = 7D5E60892EC9866E00042715 /* rainier2 */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7D5E60812EC9866E00042715 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					7D5E60882EC9866E00042715 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+				};
+			};
+			buildConfigurationList = 7D5E60842EC9866E00042715 /* Build configuration list for PBXProject "rainier2" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7D5E60802EC9866E00042715;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7D5E608A2EC9866E00042715 /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 7D5E61172EC9873D00042715 /* Products */;
+					ProjectRef = 7D5E61012EC9873D00042715 /* rainier2.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				7D5E60882EC9866E00042715 /* rainier2 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7D5E60852EC9866E00042715 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D5E61192EC9873D00042715 /* OutputManager.cpp.o.d in Sources */,
+				7D5E611A2EC9873D00042715 /* main.cpp.o.d in Sources */,
+				7D5E611B2EC9873D00042715 /* RAINIER.C in Sources */,
+				7D5E611C2EC9873D00042715 /* LevelDensity.cpp in Sources */,
+				7D5E611D2EC9873D00042715 /* Nucleus.cpp.o.d in Sources */,
+				7D5E611E2EC9873D00042715 /* GammaStrength.cpp in Sources */,
+				7D5E611F2EC9873D00042715 /* CMakeCXXCompilerId.cpp in Sources */,
+				7D5E61202EC9873D00042715 /* flags.make in Sources */,
+				7D5E61212EC9873D00042715 /* Config.cpp in Sources */,
+				7D5E61222EC9873D00042715 /* SpinCutoff.cpp in Sources */,
+				7D5E61232EC9873D00042715 /* LevelFileReader.cpp.o.d in Sources */,
+				7D5E61242EC9873D00042715 /* depend.make in Sources */,
+				7D5E61252EC9873D00042715 /* flags.make in Sources */,
+				7D5E61262EC9873D00042715 /* apple-sdk.cpp in Sources */,
+				7D5E61272EC9873D00042715 /* OutputManager.cpp in Sources */,
+				7D5E61282EC9873D00042715 /* main.cpp in Sources */,
+				7D5E61292EC9873D00042715 /* DecaySimulator.cpp in Sources */,
+				7D5E612A2EC9873D00042715 /* build.make in Sources */,
+				7D5E612B2EC9873D00042715 /* build.make in Sources */,
+				7D5E612C2EC9873D00042715 /* Makefile in Sources */,
+				7D5E612D2EC9873D00042715 /* depend.make in Sources */,
+				7D5E612E2EC9873D00042715 /* GammaStrength.cpp.o.d in Sources */,
+				7D5E612F2EC9873D00042715 /* Level.cpp in Sources */,
+				7D5E61302EC9873D00042715 /* SpinCutoff.cpp.o.d in Sources */,
+				7D5E61312EC9873D00042715 /* DecaySimulator.cpp.o.d in Sources */,
+				7D5E61322EC9873D00042715 /* CascadeEvent.cpp in Sources */,
+				7D5E61332EC9873D00042715 /* CascadeEvent.cpp.o.d in Sources */,
+				7D5E61342EC9873D00042715 /* LevelDensity.cpp.o.d in Sources */,
+				7D5E61352EC9873D00042715 /* Nucleus.cpp in Sources */,
+				7D5E61362EC9873D00042715 /* compiler_depend.make in Sources */,
+				7D5E61372EC9873D00042715 /* progress.make in Sources */,
+				7D5E61382EC9873D00042715 /* Config.cpp.o.d in Sources */,
+				7D5E61392EC9873D00042715 /* LevelFileReader.cpp in Sources */,
+				7D5E613A2EC9873D00042715 /* progress.make in Sources */,
+				7D5E613B2EC9873D00042715 /* compiler_depend.make in Sources */,
+				7D5E613C2EC9873D00042715 /* Level.cpp.o.d in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7D5E608E2EC9866E00042715 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7D5E608F2EC9866E00042715 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7D5E60912EC9866E00042715 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Z38WKSQMG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/build",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		7D5E60922EC9866E00042715 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Z38WKSQMG8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/build",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7D5E60842EC9866E00042715 /* Build configuration list for PBXProject "rainier2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D5E608E2EC9866E00042715 /* Debug */,
+				7D5E608F2EC9866E00042715 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D5E60902EC9866E00042715 /* Build configuration list for PBXNativeTarget "rainier2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D5E60912EC9866E00042715 /* Debug */,
+				7D5E60922EC9866E00042715 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7D5E60812EC9866E00042715 /* Project object */;
+}
