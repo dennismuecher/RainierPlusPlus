@@ -16,6 +16,11 @@ namespace rainier {
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
     : nucleus_(nucleus), config_(config), realization_(realization), numStuckEvents_(0) {
     
+		transitionPool_(2000) {  // Pre-allocate 2000 transitions
+    
+	// Pre-allocate transition buffer
+	transitionBuffer_.reserve(500);
+	
     // Initialize random number generator
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
@@ -160,16 +165,19 @@ bool DecaySimulator::performDecayStep(std::shared_ptr<Level>& currentLevel,
     step.initialLevel = currentLevel;
     
     // Calculate decay widths and build transition list
-    std::vector<std::shared_ptr<Transition>> transitions;
-    double totalWidth = calculateTotalWidth(currentLevel, transitions);
+
+	// Reset pool and buffer for reuse - NO ALLOCATIONS!
+    transitionPool_.reset();
+    transitionBuffer_.clear();
     
-    if (totalWidth <= 0.0 || transitions.empty()) {
-        return false;  // Stuck - no allowed transitions
+    double totalWidth = calculateTotalWidth(currentLevel, transitionBuffer_);
+    
+    if (totalWidth <= 0.0 || transitionBuffer_.empty()) {
+        return false;
     }
     
-    // Select transition
-    std::shared_ptr<Transition> selectedTransition;
-    if (!selectTransition(currentLevel, transitions, totalWidth, selectedTransition)) {
+    Transition* selectedTransition = nullptr;
+    if (!selectTransition(currentLevel, transitionBuffer_, totalWidth, selectedTransition)) {
         return false;
     }
     
@@ -192,25 +200,28 @@ bool DecaySimulator::performDecayStep(std::shared_ptr<Level>& currentLevel,
 }
 
 double DecaySimulator::calculateTotalWidth(const std::shared_ptr<Level>& level,
-                                          std::vector<std::shared_ptr<Transition>>& transitions) {
+                                          std::vector<Transition*>& transitions) {
     transitions.clear();
     
-    // For discrete levels, use known transitions
     if (level->isDiscrete()) {
         auto discLevel = std::dynamic_pointer_cast<DiscreteLevel>(level);
         if (discLevel) {
-            transitions = discLevel->getTransitions();
+            // Convert shared_ptr to raw pointers - no allocation!
+            const auto& levelTransitions = discLevel->getTransitions();
+            for (const auto& trans : levelTransitions) {
+                transitions.push_back(trans.get());
+            }
             return discLevel->getTotalWidth();
         }
         return 0.0;
     }
     
-    // For continuum levels, calculate widths
     return calculateContinuumWidth(level, transitions);
 }
 
 double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& level,
-                                              std::vector<std::shared_ptr<Transition>>& transitions) {
+                                              std::vector<Transition*>& transitions) {
+
     // Original RAINIER lines 503-600
     
     double Ex = level->getEnergy();
@@ -264,9 +275,12 @@ double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& lev
                     double partialWidth = strength * levelSpacing * (1.0 + icc);
                     
                     if (partialWidth > 0) {
-                        auto transition = std::make_shared<Transition>(
-                            level, finalLevel, 0.0, icc
-                        );
+						// CRITICAL OPTIMIZATION: Reuse from pool!
+                        Transition* transition = transitionPool_.acquire();
+                        transition->setInitialLevel(level);
+                        transition->setFinalLevel(finalLevel);
+                        transition->setBranchingRatio(0.0);
+                        transition->setInternalConversionCoeff(icc);
                         transition->setType(transType);
                         transition->setMixingRatio(mixingRatio);
                         transition->setPartialWidth(partialWidth);
@@ -303,9 +317,12 @@ double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& lev
                     double partialWidth = strength * levelSpacing * fluctuation * (1.0 + icc);
                     
                     if (partialWidth > 0) {
-                        auto transition = std::make_shared<Transition>(
-                            level, finalLevel, 0.0, icc
-                        );
+						// CRITICAL OPTIMIZATION: Reuse from pool!
+                        Transition* transition = transitionPool_.acquire();
+                        transition->setInitialLevel(level);
+                        transition->setFinalLevel(finalLevel);
+                        transition->setBranchingRatio(0.0);
+                        transition->setInternalConversionCoeff(icc);
                         transition->setType(transType);
                         transition->setMixingRatio(mixingRatio);
                         transition->setPartialWidth(partialWidth);
@@ -320,16 +337,17 @@ double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& lev
     return totalWidth;
 }
 
+		
 bool DecaySimulator::selectTransition(const std::shared_ptr<Level>& level,
-                                     const std::vector<std::shared_ptr<Transition>>& transitions,
-                                     double totalWidth,
-                                     std::shared_ptr<Transition>& selectedTransition) {
+		                                     const std::vector<Transition*>& transitions,
+		                                     double totalWidth,
+		                                     Transition*& selectedTransition) {
     // For discrete levels, use branching ratios
     if (level->isDiscrete()) {
         double randomBR = rng_->Uniform(1.0);
         double cumulativeBR = 0.0;
         
-        for (const auto& trans : transitions) {
+         for (auto* trans : transitions) {
             cumulativeBR += trans->getBranchingRatio();
             if (cumulativeBR >= randomBR) {
                 selectedTransition = trans;

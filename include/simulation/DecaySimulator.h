@@ -7,6 +7,7 @@
 #include "Config.h"
 #include <memory>
 #include <vector>
+#include "utils/TransitionPool.h"
 
 // Forward declarations
 class TRandom2;
@@ -65,18 +66,18 @@ private:
                          CascadeStep& step);
     
     // Width calculations
-    double calculateTotalWidth(const std::shared_ptr<Level>& level,
-                              std::vector<std::shared_ptr<Transition>>& transitions);
+						 
+	double calculateTotalWidth(const std::shared_ptr<Level>& level,
+					                                 std::vector<Transition*>& transitions);
+	
+	double calculateContinuumWidth(const std::shared_ptr<Level>& level,
+					                                     std::vector<Transition*>& transitions);
     
-    double calculateContinuumWidth(const std::shared_ptr<Level>& level,
-                                  std::vector<std::shared_ptr<Transition>>& transitions);
-    
-    // Transition selection
-    bool selectTransition(const std::shared_ptr<Level>& level,
-                         const std::vector<std::shared_ptr<Transition>>& transitions,
-                         double totalWidth,
-                         std::shared_ptr<Transition>& selectedTransition);
-    
+	bool selectTransition(const std::shared_ptr<Level>& level,
+		const std::vector<Transition*>& transitions,
+		 double totalWidth,
+		 Transition*& selectedTransition);				 
+						 				       
     // Helper methods
     double getDecayTime(double width);
     double getPorterThomasFluctuation();
@@ -95,7 +96,11 @@ private:
     
     std::vector<CascadeEvent> events_;
     
-    // Statistics
+  // Performance optimization - object pool and reusable buffer
+    TransitionPool transitionPool_;
+    std::vector<Transition*> transitionBuffer_;
+    
+	// Statistics
     int numStuckEvents_;
 };
 

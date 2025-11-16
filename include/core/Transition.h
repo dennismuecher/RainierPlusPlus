@@ -36,6 +36,11 @@ public:
     void setType(Type type) { type_ = type; }
     void setMixingRatio(double delta) { mixingRatio_ = delta; }
     void setPartialWidth(double width) { partialWidth_ = width; }
+	
+	void setInitialLevel(std::shared_ptr<Level> level) { initialLevel_ = level; }
+	void setFinalLevel(std::shared_ptr<Level> level) { finalLevel_ = level; }
+
+
 
     static Type determineType(double spinI, int parityI,
                              double spinF, int parityF,

@@ -51,6 +51,7 @@ set(HEADERS
     include/io/LevelFileReader.h
     include/io/OutputManager.h
     include/utils/PhysicsConstants.h
+    include/utils/TransitionPool.h
 )
 
 # Create library

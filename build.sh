@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Building RAINIER 2.0..."
+echo "Building RAINIER++..."
 mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release

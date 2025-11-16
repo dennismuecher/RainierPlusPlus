@@ -139,8 +139,6 @@
 		7D5E60E32EC9873D00042715 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		7D5E60E42EC9873D00042715 /* example.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = example.json; sourceTree = "<group>"; };
 		7D5E60E62EC9873D00042715 /* kirsch_bernstein_rainier.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = kirsch_bernstein_rainier.pdf; sourceTree = "<group>"; };
-		7D5E60E82EC9873D00042715 /* GETTING_STARTED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GETTING_STARTED.md; sourceTree = "<group>"; };
-		7D5E60E92EC9873D00042715 /* IMPLEMENTATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IMPLEMENTATION_GUIDE.md; sourceTree = "<group>"; };
 		7D5E60EA2EC9873D00042715 /* ContinuumLevel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ContinuumLevel.h; sourceTree = "<group>"; };
 		7D5E60EB2EC9873D00042715 /* DiscreteLevel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DiscreteLevel.h; sourceTree = "<group>"; };
 		7D5E60EC2EC9873D00042715 /* Level.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Level.h; sourceTree = "<group>"; };
@@ -156,11 +154,10 @@
 		7D5E60FA2EC9873D00042715 /* PhysicsConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PhysicsConstants.h; sourceTree = "<group>"; };
 		7D5E60FC2EC9873D00042715 /* Config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Config.h; sourceTree = "<group>"; };
 		7D5E60FE2EC9873D00042715 /* z060.dat */ = {isa = PBXFileReference; lastKnownFileType = text; path = z060.dat; sourceTree = "<group>"; };
-		7D5E61002EC9873D00042715 /* PROJECT_STRUCTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROJECT_STRUCTURE.md; sourceTree = "<group>"; };
 		7D5E61012EC9873D00042715 /* rainier2.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = rainier2.xcodeproj; sourceTree = "<group>"; };
 		7D5E61022EC9873D00042715 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7D5E61032EC9873D00042715 /* Level.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Level.cpp; sourceTree = "<group>"; };
-		7D5E61042EC9873D00042715 /* Nucleus.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Nucleus.cpp; sourceTree = "<group>"; };
+		7D5E61042EC9873D00042715 /* Nucleus.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = Nucleus.cpp; sourceTree = "<group>"; };
 		7D5E61062EC9873D00042715 /* LevelFileReader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LevelFileReader.cpp; sourceTree = "<group>"; };
 		7D5E61072EC9873D00042715 /* OutputManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OutputManager.cpp; sourceTree = "<group>"; };
 		7D5E61092EC9873D00042715 /* GammaStrength.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GammaStrength.cpp; sourceTree = "<group>"; };
@@ -205,11 +202,8 @@
 				7D5E60E32EC9873D00042715 /* CMakeLists.txt */,
 				7D5E60E52EC9873D00042715 /* config */,
 				7D5E60E72EC9873D00042715 /* docs */,
-				7D5E60E82EC9873D00042715 /* GETTING_STARTED.md */,
-				7D5E60E92EC9873D00042715 /* IMPLEMENTATION_GUIDE.md */,
 				7D5E60FD2EC9873D00042715 /* include */,
 				7D5E60FF2EC9873D00042715 /* levels */,
-				7D5E61002EC9873D00042715 /* PROJECT_STRUCTURE.md */,
 				7D5E61012EC9873D00042715 /* rainier2.xcodeproj */,
 				7D5E61022EC9873D00042715 /* README.md */,
 				7D5E61162EC9873D00042715 /* src */,
