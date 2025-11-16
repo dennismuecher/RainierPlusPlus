@@ -1,4 +1,5 @@
 // DecaySimulator.cpp - Complete Monte Carlo simulation engine
+// OPTIMIZED VERSION - Matches original RAINIER performance
 // Physics from original RAINIER.C lines 503-1450
 #include "simulation/DecaySimulator.h"
 #include "simulation/CascadeEvent.h"
@@ -12,16 +13,27 @@
 #include <algorithm>
 
 namespace rainier {
-	
+
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
-	    : nucleus_(nucleus), 
-	      config_(config), 
-	      realization_(realization), 
-	      numStuckEvents_(0),
-	      transitionPool_(2000) {  // Pre-allocate 2000 transitions
+    : nucleus_(nucleus), 
+      config_(config), 
+      realization_(realization), 
+      numStuckEvents_(0) {
     
-	// Pre-allocate transition buffer
-	transitionBuffer_.reserve(500);
+    // Calculate array sizes
+    maxDiscreteLevels_ = std::max(100, nucleus.getNumDiscreteLevels());
+    maxContinuumBins_ = nucleus.getNumEnergyBins() * 50 * 2;  // E * J * P
+    
+    // Pre-allocate arrays ONCE (like original RAINIER lines 1292-1298)
+    // These will be reused for every decay step
+    discreteWidths_.resize(maxDiscreteLevels_, 0.0);
+    continuumWidths_.resize(maxContinuumBins_, 0.0);
+    
+    int maxTransitions = maxDiscreteLevels_ + maxContinuumBins_;
+    transitionTypes_.resize(maxTransitions, 0);
+    finalLevelIndices_.resize(maxTransitions, -1);
+    cumulativeWidths_.resize(maxTransitions, 0.0);
+    
     // Initialize random number generator
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
@@ -40,19 +52,17 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
     spinCutoff_ = std::make_unique<VonEgidy05>(levelDensity_.get(), nucleus.getA());
     
     // Create gamma strength functions
-	
-	std::vector<Resonance> e1Resonances;
-	for (const auto& r : config.gammaStrength.e1Resonances) {
-	    e1Resonances.push_back({r.energy, r.width, r.sigma});
-	}
-	auto e1 = std::make_unique<E1GenLorentz>(e1Resonances, config.gammaStrength.constantT);
-
+    std::vector<Resonance> e1Resonances;
+    for (const auto& r : config.gammaStrength.e1Resonances) {
+        e1Resonances.push_back({r.energy, r.width, r.sigma});
+    }
+    auto e1 = std::make_unique<E1GenLorentz>(e1Resonances, config.gammaStrength.constantT);
     
-	std::vector<Resonance> m1Resonances;
-	for (const auto& r : config.gammaStrength.m1Resonances) {
-	    m1Resonances.push_back({r.energy, r.width, r.sigma});
-	}
-	auto m1 = std::make_unique<M1StandardLorentz>(m1Resonances);
+    std::vector<Resonance> m1Resonances;
+    for (const auto& r : config.gammaStrength.m1Resonances) {
+        m1Resonances.push_back({r.energy, r.width, r.sigma});
+    }
+    auto m1 = std::make_unique<M1StandardLorentz>(m1Resonances);
     
     auto e2 = std::make_unique<E2StandardLorentz>(
         config.gammaStrength.e2Energy,
@@ -64,7 +74,7 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
         std::move(e1), std::move(m1), std::move(e2)
     );
     
-    std::cout << "  DecaySimulator initialized" << std::endl;
+    std::cout << "  DecaySimulator initialized (optimized array-based)" << std::endl;
 }
 
 DecaySimulator::~DecaySimulator() = default;
@@ -130,8 +140,6 @@ void DecaySimulator::simulateEvent() {
 void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level, 
                                        double& excitationEnergy) {
     // For now, use simple single-state initialization
-    // Will be expanded for other modes in future
-    
     excitationEnergy = config_.initialExcitation.excitationEnergy;
     double spin = config_.initialExcitation.spin;
     int parity = config_.initialExcitation.parity;
@@ -165,170 +173,162 @@ bool DecaySimulator::performDecayStep(std::shared_ptr<Level>& currentLevel,
                                       CascadeStep& step) {
     step.initialLevel = currentLevel;
     
-    // Calculate decay widths and build transition list
-
-	// Reset pool and buffer for reuse - NO ALLOCATIONS!
-    transitionPool_.reset();
-    transitionBuffer_.clear();
+    // Zero out arrays for reuse (faster than reallocating)
+    std::fill(discreteWidths_.begin(), discreteWidths_.end(), 0.0);
+    std::fill(continuumWidths_.begin(), continuumWidths_.end(), 0.0);
     
-    double totalWidth = calculateTotalWidth(currentLevel, transitionBuffer_);
+    // Calculate widths directly into pre-allocated arrays
+    double totalWidth = calculateWidthsOptimized(currentLevel);
     
-    if (totalWidth <= 0.0 || transitionBuffer_.empty()) {
+    if (totalWidth <= 0.0) {
         return false;
     }
     
-    Transition* selectedTransition = nullptr;
-    if (!selectTransition(currentLevel, transitionBuffer_, totalWidth, selectedTransition)) {
+    // Select transition using fast array-based search
+    int selectedIndex = selectTransitionOptimized(totalWidth);
+    if (selectedIndex < 0) {
         return false;
     }
+    
+    // Fill step from selected index
+    fillStepFromIndex(selectedIndex, step, currentLevel);
     
     // Get decay time
     step.timeToDecay = getDecayTime(totalWidth);
     
-    // Fill step information
-    step.finalLevel = selectedTransition->getFinalLevel();
-    step.gammaEnergy = selectedTransition->getGammaEnergy();
-    step.transitionType = static_cast<int>(selectedTransition->getType());
-    step.mixingRatio = selectedTransition->getMixingRatio();
-    
-    // Check for internal conversion
-    double icc = getInternalConversionCoeff(step.gammaEnergy, 
-                                           step.transitionType, 
-                                           step.mixingRatio);
-    step.isElectron = isInternallyConverted(icc);
+    // Update current level
+    currentLevel = step.finalLevel;
     
     return true;
 }
 
-double DecaySimulator::calculateTotalWidth(const std::shared_ptr<Level>& level,
-                                          std::vector<Transition*>& transitions) {
-    transitions.clear();
+double DecaySimulator::calculateWidthsOptimized(const std::shared_ptr<Level>& level) {
     
+    // For discrete levels, use known transitions
     if (level->isDiscrete()) {
         auto discLevel = std::dynamic_pointer_cast<DiscreteLevel>(level);
-        if (discLevel) {
-            // Convert shared_ptr to raw pointers - no allocation!
-            const auto& levelTransitions = discLevel->getTransitions();
-            for (const auto& trans : levelTransitions) {
-                transitions.push_back(trans.get());
-            }
-            return discLevel->getTotalWidth();
+        const auto& transitions = discLevel->getTransitions();
+        
+        double totalWidth = 0.0;
+        for (size_t i = 0; i < transitions.size() && i < discreteWidths_.size(); ++i) {
+            discreteWidths_[i] = transitions[i]->getPartialWidth();
+            transitionTypes_[i] = static_cast<int>(transitions[i]->getType());
+            finalLevelIndices_[i] = -static_cast<int>(i) - 1;  // Negative = discrete
+            cumulativeWidths_[i] = totalWidth + discreteWidths_[i];
+            totalWidth = cumulativeWidths_[i];
         }
-        return 0.0;
+        return totalWidth;
     }
     
-    return calculateContinuumWidth(level, transitions);
-}
-
-double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& level,
-                                              std::vector<Transition*>& transitions) {
-
-    // Original RAINIER lines 503-600
-    
+    // For continuum levels - calculate widths
     double Ex = level->getEnergy();
-    double spin = level->getSpin();
-    int parity = level->getParity();
+    double Ji = level->getSpin();
+    int pari = level->getParity();
     
-    // Calculate level spacing
-    double density = levelDensity_->getDensity(Ex, spin, parity);
+    double density = levelDensity_->getDensity(Ex, Ji, pari);
+    if (density <= 0) {
+        return 0.0;
+    }
     double levelSpacing = 1.0 / density;
     
-    double totalWidth = 0.0;
+    // Seed for Porter-Thomas per level (like original line 519)
+    TRandom2 ranStr(1 + realization_ + static_cast<int>(Ex * 1000));
     
-    // Loop over possible final states (ΔJ = -2, -1, 0, +1, +2)
+    double totalWidth = 0.0;
+    int transitionIndex = 0;
+    
+    // Loop over spin changes (ΔJ = -2, -1, 0, +1, +2 for dipole and quadrupole)
     for (int dJ = -2; dJ <= 2; ++dJ) {
-        double finalSpin = spin + dJ;
-        if (finalSpin < 0) continue;
+        double Jf = Ji + dJ;
+        if (Jf < 0) continue;
         
-        for (int finalParity = 0; finalParity <= 1; ++finalParity) {
-            // Determine transition type
-            auto transType = Transition::determineType(
-                spin, parity, finalSpin, finalParity, nucleus_.isEvenA()
-            );
+        for (int parf = 0; parf <= 1; ++parf) {
             
+            auto transType = Transition::determineType(Ji, pari, Jf, parf, nucleus_.isEvenA());
             if (transType == Transition::Type::NONE) continue;
             
             int transTypeInt = static_cast<int>(transType);
-            int finalSpinBin = Level::spinToBin(finalSpin, nucleus_.isEvenA());
+            int finalSpinBin = Level::spinToBin(Jf, nucleus_.isEvenA());
             
-            // Transitions to discrete levels
+            // ================================================================
+            // TRANSITIONS TO DISCRETE LEVELS (original lines 567-586)
+            // ================================================================
             for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
                 auto finalLevel = nucleus_.getDiscreteLevel(i);
                 
-                if (std::abs(finalLevel->getSpin() - finalSpin) < 0.1 &&
-                    finalLevel->getParity() == finalParity) {
-                    
-                    double Egamma = Ex - finalLevel->getEnergy();
-                    if (Egamma <= 0) continue;
-                    
-                    // Get gamma strength with fluctuation
-                    double mixingRatio = 0.0;
-                    double strength = gammaStrength_->getTotalStrength(
-                        Ex, Egamma, transTypeInt, mixingRatio
-                    );
-                    
-                    // Apply Porter-Thomas fluctuation
-                    double fluctuation = getPorterThomasFluctuation();
-                    strength *= fluctuation;
-                    
-                    // Calculate partial width
-                    double icc = getInternalConversionCoeff(Egamma, transTypeInt, mixingRatio);
-                    double partialWidth = strength * levelSpacing * (1.0 + icc);
-                    
-                    if (partialWidth > 0) {
-						// CRITICAL OPTIMIZATION: Reuse from pool!
-                        Transition* transition = transitionPool_.acquire();
-                        transition->setInitialLevel(level);
-                        transition->setFinalLevel(finalLevel);
-                        transition->setBranchingRatio(0.0);
-                        transition->setInternalConversionCoeff(icc);
-                        transition->setType(transType);
-                        transition->setMixingRatio(mixingRatio);
-                        transition->setPartialWidth(partialWidth);
-                        transitions.push_back(transition);
-                        totalWidth += partialWidth;
-                    }
+                if (std::abs(finalLevel->getSpin() - Jf) > 0.1 ||
+                    finalLevel->getParity() != parf) continue;
+                
+                double Egamma = Ex - finalLevel->getEnergy();
+                if (Egamma <= 0) continue;
+                
+                // Calculate strength with Porter-Thomas fluctuation
+                double mixingRatio = 0.0;
+                double strength = gammaStrength_->getTotalStrength(Ex, Egamma, transTypeInt, mixingRatio);
+                
+                // Porter-Thomas: χ²(1) distribution (original line 577)
+                double g = ranStr.Gaus(0.0, 1.0);
+                double ptFactor = g * g;
+                
+                double icc = getInternalConversionCoeff(Egamma, transTypeInt, mixingRatio);
+                double width = strength * levelSpacing * ptFactor * (1.0 + icc);
+                
+                if (width > 0 && transitionIndex < static_cast<int>(discreteWidths_.size())) {
+                    discreteWidths_[transitionIndex] = width;
+                    transitionTypes_[transitionIndex] = transTypeInt;
+                    finalLevelIndices_[transitionIndex] = -i - 1;  // Negative for discrete
+                    cumulativeWidths_[transitionIndex] = totalWidth + width;
+                    totalWidth = cumulativeWidths_[transitionIndex];
+                    transitionIndex++;
                 }
             }
             
-            // Transitions to continuum levels
-            int currentEnergyBin = nucleus_.getEnergyBin(Ex);
-            for (int energyBin = 0; energyBin < currentEnergyBin; ++energyBin) {
-                const auto& finalLevels = nucleus_.getContinuumLevels(
-                    energyBin, finalSpinBin, finalParity
-                );
+            // ================================================================
+            // TRANSITIONS TO CONTINUUM (original lines 537-562)
+            // KEY OPTIMIZATION: Calculate strength ONCE per bin, not per level!
+            // ================================================================
+            int currentEBin = nucleus_.getEnergyBin(Ex);
+            
+            for (int eBin = 0; eBin < currentEBin; ++eBin) {
+                const auto& finalLevels = nucleus_.getContinuumLevels(eBin, finalSpinBin, parf);
+                int nLevelsInBin = finalLevels.size();
+                if (nLevelsInBin == 0) continue;
                 
-                if (finalLevels.empty()) continue;
-                
-                double binCenterEnergy = nucleus_.getBinCentralEnergy(energyBin);
-                double Egamma = Ex - binCenterEnergy;
+                double binCenterE = nucleus_.getBinCentralEnergy(eBin);
+                double Egamma = Ex - binCenterE;
                 if (Egamma <= 0) continue;
                 
-                // Calculate strength once per bin
+                // Calculate strength ONCE for the bin (original line 548)
                 double mixingRatio = 0.0;
-                double strength = gammaStrength_->getTotalStrength(
-                    Ex, Egamma, transTypeInt, mixingRatio
-                );
-                
+                double strength = gammaStrength_->getTotalStrength(Ex, Egamma, transTypeInt, mixingRatio);
                 double icc = getInternalConversionCoeff(Egamma, transTypeInt, mixingRatio);
                 
-                // Add contribution for each level in bin
-                for (const auto& finalLevel : finalLevels) {
-                    double fluctuation = getPorterThomasFluctuation();
-                    double partialWidth = strength * levelSpacing * fluctuation * (1.0 + icc);
-                    
-                    if (partialWidth > 0) {
-						// CRITICAL OPTIMIZATION: Reuse from pool!
-                        Transition* transition = transitionPool_.acquire();
-                        transition->setInitialLevel(level);
-                        transition->setFinalLevel(finalLevel);
-                        transition->setBranchingRatio(0.0);
-                        transition->setInternalConversionCoeff(icc);
-                        transition->setType(transType);
-                        transition->setMixingRatio(mixingRatio);
-                        transition->setPartialWidth(partialWidth);
-                        transitions.push_back(transition);
-                        totalWidth += partialWidth;
+                // Pack bin index
+                int binIndex = eBin + finalSpinBin * nucleus_.getNumEnergyBins() + 
+                              parf * nucleus_.getNumEnergyBins() * 50;
+                
+                if (binIndex >= static_cast<int>(continuumWidths_.size())) continue;
+                
+                // Apply Porter-Thomas to EACH level in bin (original lines 548-556)
+                // Use ranStr directly - no need to store state
+                double totalStrengthForBin = 0.0;
+                for (int j = 0; j < nLevelsInBin; ++j) {
+                    double g = ranStr.Gaus(0.0, 1.0);
+                    double ptFactor = g * g;
+                    totalStrengthForBin += strength * ptFactor * (1.0 + icc);
+                }
+                
+                // Width for this bin (original line 558)
+                double widthForBin = totalStrengthForBin * levelSpacing;
+                
+                if (widthForBin > 0 && binIndex < static_cast<int>(continuumWidths_.size())) {
+                    continuumWidths_[binIndex] = widthForBin;
+                    int idx = maxDiscreteLevels_ + binIndex;
+                    if (idx < static_cast<int>(transitionTypes_.size())) {
+                        transitionTypes_[idx] = transTypeInt;
+                        finalLevelIndices_[idx] = binIndex;
+                        cumulativeWidths_[idx] = totalWidth + widthForBin;
+                        totalWidth = cumulativeWidths_[idx];
                     }
                 }
             }
@@ -338,44 +338,56 @@ double DecaySimulator::calculateContinuumWidth(const std::shared_ptr<Level>& lev
     return totalWidth;
 }
 
-		
-bool DecaySimulator::selectTransition(const std::shared_ptr<Level>& level,
-		                                     const std::vector<Transition*>& transitions,
-		                                     double totalWidth,
-		                                     Transition*& selectedTransition) {
-    // For discrete levels, use branching ratios
-    if (level->isDiscrete()) {
-        double randomBR = rng_->Uniform(1.0);
-        double cumulativeBR = 0.0;
-        
-         for (auto* trans : transitions) {
-            cumulativeBR += trans->getBranchingRatio();
-            if (cumulativeBR >= randomBR) {
-                selectedTransition = trans;
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    // For continuum levels, use widths
+int DecaySimulator::selectTransitionOptimized(double totalWidth) {
     double randomWidth = rng_->Uniform(totalWidth);
-    double cumulativeWidth = 0.0;
     
-    for (const auto& trans : transitions) {
-        cumulativeWidth += trans->getPartialWidth();
-        if (cumulativeWidth >= randomWidth) {
-            selectedTransition = trans;
-            return true;
+    // Linear search through cumulative widths (could use binary search if needed)
+    int maxIndex = maxDiscreteLevels_ + maxContinuumBins_;
+    for (int i = 0; i < maxIndex; ++i) {
+        if (cumulativeWidths_[i] >= randomWidth && cumulativeWidths_[i] > 0) {
+            return i;
         }
     }
     
-    return false;
+    return -1;  // Failed to select
+}
+
+void DecaySimulator::fillStepFromIndex(int index, CascadeStep& step,
+                                       const std::shared_ptr<Level>& initialLevel) {
+    if (index < maxDiscreteLevels_) {
+        // Discrete transition
+        int finalIndex = -finalLevelIndices_[index] - 1;
+        if (finalIndex >= 0 && finalIndex < nucleus_.getNumDiscreteLevels()) {
+            step.finalLevel = nucleus_.getDiscreteLevel(finalIndex);
+        }
+    } else {
+        // Continuum transition - decode bin index
+        int binIndex = finalLevelIndices_[index];
+        int eBin = binIndex % nucleus_.getNumEnergyBins();
+        int temp = binIndex / nucleus_.getNumEnergyBins();
+        int spinBin = temp % 50;
+        int parf = temp / 50;
+        
+        // Select random level from bin
+        const auto& levels = nucleus_.getContinuumLevels(eBin, spinBin, parf);
+        if (!levels.empty()) {
+            int levelInBin = rng_->Integer(levels.size());
+            step.finalLevel = levels[levelInBin];
+        }
+    }
+    
+    if (step.finalLevel) {
+        step.gammaEnergy = initialLevel->getEnergy() - step.finalLevel->getEnergy();
+        step.transitionType = transitionTypes_[index];
+        step.mixingRatio = 0.0;
+        
+        double icc = getInternalConversionCoeff(step.gammaEnergy, step.transitionType, 0.0);
+        step.isElectron = isInternallyConverted(icc);
+    }
 }
 
 double DecaySimulator::getDecayTime(double width) {
-    // Original RAINIER lines 601-605
-    // τ = ℏ/Γ, then sample exponentially
+    // Original RAINIER lines 601-605: τ = ℏ/Γ, then sample exponentially
     if (width <= 0) {
         return constants::DEFAULT_MAX_HALFLIFE / constants::LOG_2;
     }
@@ -385,25 +397,20 @@ double DecaySimulator::getDecayTime(double width) {
 }
 
 double DecaySimulator::getPorterThomasFluctuation() {
-    // Original RAINIER lines 411-422
     // Porter-Thomas distribution: χ²(ν=1) → Gaussian squared
-    
     double gaussian = rng_->Gaus(0.0, 1.0);
     return gaussian * gaussian;
 }
 
 double DecaySimulator::getInternalConversionCoeff(double Egamma, int transType, 
                                                   double mixingRatio) {
-    // Simplified ICC - full BrIcc integration would go here
-    // For now, use simple approximations
-    
-    (void)mixingRatio;  // Will be used when full ICC implemented
+    (void)mixingRatio;  // Will be used when full BrIcc implemented
     
     if (!config_.internalConversion.enabled) {
         return 0.0;
     }
     
-    // Very crude approximation
+    // Simplified ICC - rough approximation
     // Real implementation would call BrIcc or use tables
     double Z = nucleus_.getZ();
     double alpha = 0.0;
