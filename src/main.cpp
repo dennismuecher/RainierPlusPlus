@@ -89,7 +89,8 @@ int main(int argc, char** argv) {
 		              << config.simulation.numRealizations << "\n";
 
 		    nucleus.buildContinuumLevels(config, real);
-
+			outputMgr.fillLevelSpectra(real, nucleus);
+			
 		    DecaySimulator simulator(nucleus, config, real);
 		    simulator.run();
 

@@ -18,6 +18,7 @@ namespace rainier {
 // Forward declarations
 class DecaySimulator;
 class CascadeEvent;
+class Nucleus;
 
 /**
  * @brief Manages ROOT output files and histograms
@@ -33,12 +34,20 @@ public:
     void saveRealization(int realization, const DecaySimulator& simulator);
     
     /**
+     * @brief Fill level spectrum histograms from generated continuum levels
+     * @param realization Realization number
+     * @param nucleus Nucleus containing the generated levels
+     */
+    void fillLevelSpectra(int realization, const Nucleus& nucleus);
+    
+    /**
      * @brief Finalize and close output file
      */
     void finalize();
 
 private:
     void createHistograms(int realization);
+    void createLevelSpectraHistograms(int realization);
     void fillHistograms(int realization, const CascadeEvent& event);
     void saveParameters();
     
@@ -51,6 +60,9 @@ private:
     // Histograms per realization
     std::map<std::string, TH1D*> histograms1D_;
     std::map<std::string, TH2D*> histograms2D_;
+    
+    // Level spectrum histograms (one per spin value)
+    std::map<std::string, TH1D*> levelSpectraHistograms_;
     
     // Tree branches
     std::vector<double> treeGammaEnergies_;

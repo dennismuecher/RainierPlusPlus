@@ -1,13 +1,18 @@
-// OutputManager.cpp - Complete ROOT output implementation
-// Based on original RAINIER.C lines 1012-1204
+// OutputManager.cpp
 #include "io/OutputManager.h"
 #include "simulation/DecaySimulator.h"
 #include "simulation/CascadeEvent.h"
+#include "core/Nucleus.h"
+#include "core/Level.h"
+#include "core/DiscreteLevel.h"
+#include "core/ContinuumLevel.h"
+
 #include <TFile.h>
+#include <TTree.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TTree.h>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 
 namespace rainier {
@@ -15,71 +20,30 @@ namespace rainier {
 OutputManager::OutputManager(const Config& config, int runNumber)
     : config_(config), runNumber_(runNumber), outputFile_(nullptr), cascadeTree_(nullptr) {
     
-    std::string filename = "Run" + std::to_string(runNumber) + ".root";
+    // Create output file
+    std::string filename = "output" + std::to_string(runNumber) + ".root";
     outputFile_ = new TFile(filename.c_str(), "RECREATE");
     
     if (!outputFile_ || outputFile_->IsZombie()) {
-        std::cerr << "Error: Cannot create output file " << filename << std::endl;
-        outputFile_ = nullptr;
-        return;
+        throw std::runtime_error("Failed to create output file: " + filename);
     }
     
-    std::cout << "OutputManager created - output file: " << filename << std::endl;
+    std::cout << "Created output file: " << filename << std::endl;
     
-    // Create TTree if requested
+    // Create tree if requested
     if (config_.output.saveTree) {
-        cascadeTree_ = new TTree("cascades", "Gamma Cascade Events");
+        cascadeTree_ = new TTree("cascadeTree", "Gamma-ray cascade data");
         cascadeTree_->Branch("gammaEnergies", &treeGammaEnergies_);
         cascadeTree_->Branch("finalEnergies", &treeFinalEnergies_);
         cascadeTree_->Branch("times", &treeTimes_);
-        cascadeTree_->Branch("initialEx", &treeInitialEx_, "initialEx/D");
-        cascadeTree_->Branch("initialSpin", &treeInitialSpin_, "initialSpin/I");
-        cascadeTree_->Branch("initialParity", &treeInitialParity_, "initialParity/I");
+        cascadeTree_->Branch("initialEx", &treeInitialEx_);
+        cascadeTree_->Branch("initialSpin", &treeInitialSpin_);
+        cascadeTree_->Branch("initialParity", &treeInitialParity_);
     }
 }
 
 OutputManager::~OutputManager() {
-    if (outputFile_) {
-        outputFile_->Close();
-        delete outputFile_;
-    }
-}
-
-void OutputManager::saveRealization(int realization, const DecaySimulator& simulator) {
-    std::cout << "  Saving realization " << realization << std::endl;
-    
-    // Create histograms for this realization
-    createHistograms(realization);
-    
-    // Fill histograms with events
-    const auto& events = simulator.getEvents();
-    for (const auto& event : events) {
-        fillHistograms(realization, event);
-        
-        // Fill tree if enabled
-        if (cascadeTree_) {
-            treeGammaEnergies_.clear();
-            treeFinalEnergies_.clear();
-            treeTimes_.clear();
-            
-            auto initialLevel = event.getInitialLevel();
-            if (initialLevel) {
-                treeInitialEx_ = event.getInitialExcitation();
-                treeInitialSpin_ = static_cast<int>(initialLevel->getSpin());
-                treeInitialParity_ = initialLevel->getParity();
-                
-                for (const auto& step : event.getSteps()) {
-                    if (!step.isElectron) {  // Only gammas
-                        treeGammaEnergies_.push_back(step.gammaEnergy);
-                        treeFinalEnergies_.push_back(step.finalLevel->getEnergy());
-                        treeTimes_.push_back(step.timeToDecay);
-                    }
-                }
-                
-                cascadeTree_->Fill();
-            }
-        }
-    }
+    finalize();
 }
 
 void OutputManager::createHistograms(int realization) {
@@ -158,6 +122,118 @@ void OutputManager::createHistograms(int realization) {
     histograms1D_[name] = hSpinI;
 }
 
+void OutputManager::createLevelSpectraHistograms(int realization) {
+    std::string suffix = "_real" + std::to_string(realization);
+    
+    // Determine number of spin bins based on whether A is even or odd
+    bool isEvenA = (config_.nucleus.A % 2 == 0);
+    int maxSpinBin = static_cast<int>(config_.output.maxPlotSpin);
+    
+    // Create one histogram for each spin value
+    for (int spinBin = 0; spinBin <= maxSpinBin; ++spinBin) {
+        double spin = Level::binToSpin(spinBin, isEvenA);
+        
+        // Format spin value for histogram name (handle half-integer spins)
+        std::ostringstream spinStr;
+        if (isEvenA) {
+            spinStr << spinBin;
+        } else {
+            // For odd-A, spins are half-integer
+            spinStr << spinBin << "p5";  // e.g., "0p5" for 0.5, "1p5" for 1.5
+        }
+        
+        // Create histogram for this spin (all parities combined)
+        std::string name = "hLevelSpectrum_J" + spinStr.str() + suffix;
+        
+        // Format title with proper spin notation
+        std::ostringstream titleStream;
+        titleStream << "Level Spectrum J=";
+        if (isEvenA) {
+            titleStream << spinBin;
+        } else {
+            titleStream << spinBin << ".5";
+        }
+        titleStream << ", Real " << realization;
+        
+        auto hSpectrum = new TH1D(name.c_str(),
+                                  titleStream.str().c_str(),
+                                  200,  // Number of bins
+                                  0.0,  // Min energy
+                                  config_.initialExcitation.excitationEnergy + 2.0);  // Max energy with buffer
+        
+        hSpectrum->GetXaxis()->SetTitle("E_{x} (MeV)");
+        hSpectrum->GetYaxis()->SetTitle("Number of Levels");
+        hSpectrum->SetLineColor(spinBin % 9 + 1);  // Different color for each spin
+        hSpectrum->SetLineWidth(2);
+        
+        levelSpectraHistograms_[name] = hSpectrum;
+    }
+    
+    std::cout << "Created " << levelSpectraHistograms_.size() 
+              << " level spectrum histograms for realization " << realization << std::endl;
+}
+
+void OutputManager::fillLevelSpectra(int realization, const Nucleus& nucleus) {
+    std::string suffix = "_real" + std::to_string(realization);
+    bool isEvenA = nucleus.isEvenA();
+    
+    std::cout << "Filling level spectra histograms for realization " << realization << "..." << std::endl;
+    
+    // First, fill from discrete levels
+    for (int i = 0; i < nucleus.getNumDiscreteLevels(); ++i) {
+        auto level = nucleus.getDiscreteLevel(i);
+        double energy = level->getEnergy();
+        double spin = level->getSpin();
+        int spinBin = Level::spinToBin(spin, isEvenA);
+        
+        // Format histogram name
+        std::ostringstream spinStr;
+        if (isEvenA) {
+            spinStr << spinBin;
+        } else {
+            spinStr << spinBin << "p5";
+        }
+        
+        std::string name = "hLevelSpectrum_J" + spinStr.str() + suffix;
+        
+        if (levelSpectraHistograms_.count(name)) {
+            levelSpectraHistograms_[name]->Fill(energy);
+        }
+    }
+    
+    // Now fill from continuum levels
+    int totalLevels = 0;
+    int maxSpinBin = nucleus.getMaxSpinBin();
+    
+    for (int ex = 0; ex < nucleus.getNumEnergyBins(); ++ex) {
+        for (int spinBin = 0; spinBin <= maxSpinBin; ++spinBin) {
+            // Sum over both parities
+            for (int parity = 0; parity <= 1; ++parity) {
+                const auto& levels = nucleus.getContinuumLevels(ex, spinBin, parity);
+                
+                // Format histogram name
+                std::ostringstream spinStr;
+                if (isEvenA) {
+                    spinStr << spinBin;
+                } else {
+                    spinStr << spinBin << "p5";
+                }
+                
+                std::string name = "hLevelSpectrum_J" + spinStr.str() + suffix;
+                
+                if (levelSpectraHistograms_.count(name)) {
+                    for (const auto& level : levels) {
+                        levelSpectraHistograms_[name]->Fill(level->getEnergy());
+                        totalLevels++;
+                    }
+                }
+            }
+        }
+    }
+    
+    std::cout << "  Filled " << totalLevels << " continuum levels into spectra histograms" << std::endl;
+}
+
 void OutputManager::fillHistograms(int realization, const CascadeEvent& event) {
     std::string suffix = "_real" + std::to_string(realization);
     
@@ -224,77 +300,129 @@ void OutputManager::fillHistograms(int realization, const CascadeEvent& event) {
         if (isFirstStep) {
             name = "h2FirstGen" + suffix;
             if (histograms2D_.count(name)) {
-                histograms2D_[name]->Fill(step.gammaEnergy * 1000,
-                                         initialEx * 1000);
+                histograms2D_[name]->Fill(step.gammaEnergy * 1000, initialEx * 1000);
             }
             isFirstStep = false;
         }
     }
 }
 
-void OutputManager::finalize() {
-    std::cout << "\nFinalizing output..." << std::endl;
+void OutputManager::saveRealization(int realization, const DecaySimulator& simulator) {
+    // Create histograms for this realization if not already created
+    std::string suffix = "_real" + std::to_string(realization);
+    std::string testName = "hGammaSpectrum" + suffix;
     
-    if (outputFile_) {
-        outputFile_->cd();
-        
-        // Write all histograms
-        for (auto& pair : histograms1D_) {
-            pair.second->Write();
+    if (histograms1D_.count(testName) == 0) {
+        createHistograms(realization);
+        createLevelSpectraHistograms(realization);
+    }
+    
+    // Fill level spectra from the nucleus
+    fillLevelSpectra(realization, simulator.getNucleus());
+    
+    // Fill event-by-event histograms
+    if (config_.output.saveTree) {
+        for (const auto& event : simulator.getEvents()) {
+            fillHistograms(realization, event);
+            
+            // Fill tree
+            treeGammaEnergies_.clear();
+            treeFinalEnergies_.clear();
+            treeTimes_.clear();
+            
+            auto initialLevel = event.getInitialLevel();
+            if (initialLevel) {
+                treeInitialEx_ = event.getInitialExcitation();
+                treeInitialSpin_ = static_cast<int>(initialLevel->getSpin());
+                treeInitialParity_ = initialLevel->getParity();
+                
+                for (const auto& step : event.getSteps()) {
+                    if (!step.isElectron) {  // Only gammas
+                        treeGammaEnergies_.push_back(step.gammaEnergy);
+                        treeFinalEnergies_.push_back(step.finalLevel->getEnergy());
+                        treeTimes_.push_back(step.timeToDecay);
+                    }
+                }
+                
+                cascadeTree_->Fill();
+            }
         }
-        for (auto& pair : histograms2D_) {
-            pair.second->Write();
-        }
-        
-        // Write tree
-        if (cascadeTree_) {
-            cascadeTree_->Write();
-        }
-        
-        // Save parameters to text file
-        saveParameters();
-        
-        outputFile_->Close();
-        std::cout << "Output file closed: " << outputFile_->GetName() << std::endl;
     }
 }
 
 void OutputManager::saveParameters() {
-    std::string filename = "Param" + std::to_string(runNumber_) + ".dat";
-    std::ofstream file(filename);
+    std::string filename = "parameters" + std::to_string(runNumber_) + ".dat";
+    std::ofstream out(filename);
     
-    if (!file) {
-        std::cerr << "Warning: Could not create parameter file " << filename << std::endl;
+    if (!out) {
+        std::cerr << "Warning: Could not create parameter file: " << filename << std::endl;
         return;
     }
     
-    file << "# RAINIER 2.0 Run Parameters\n";
-    file << "# Run number: " << runNumber_ << "\n\n";
+    out << "# RAINIER++ Run Parameters\n";
+    out << "# Run number: " << runNumber_ << "\n\n";
     
-    file << "# Nucleus\n";
-    file << "Z " << config_.nucleus.Z << "\n";
-    file << "A " << config_.nucleus.A << "\n";
-    file << "Sn " << config_.nucleus.Sn << " MeV\n\n";
+    out << "[Nucleus]\n";
+    out << "Z = " << config_.nucleus.Z << "\n";
+    out << "A = " << config_.nucleus.A << "\n";
+    out << "Sn = " << config_.nucleus.Sn << "\n";
+    out << "levelsFile = " << config_.nucleus.levelsFile << "\n\n";
     
-    file << "# Level Density\n";
-    file << "LevelDensityModel BSFG\n";
-    file << "a " << config_.levelDensity.a << " MeV^-1\n";
-    file << "E1 " << config_.levelDensity.E1 << " MeV\n\n";
+    out << "[Simulation]\n";
+    out << "numRealizations = " << config_.simulation.numRealizations << "\n";
+    out << "eventsPerRealization = " << config_.simulation.eventsPerRealization << "\n";
+    out << "randomSeed = " << config_.simulation.randomSeed << "\n\n";
     
-    file << "# Gamma Strength\n";
-    file << "E1Model GenLorentz\n";
-    for (const auto& res : config_.gammaStrength.e1Resonances) {
-        file << "E1Resonance " << res.energy << " " << res.width << " " << res.sigma << "\n";
+    out << "[InitialExcitation]\n";
+    out << "excitationEnergy = " << config_.initialExcitation.excitationEnergy << "\n";
+    out << "spin = " << config_.initialExcitation.spin << "\n";
+    out << "parity = " << config_.initialExcitation.parity << "\n\n";
+    
+    out.close();
+    std::cout << "Saved parameters to: " << filename << std::endl;
+}
+
+void OutputManager::finalize() {
+    if (!outputFile_) return;
+    
+    std::cout << "Finalizing output..." << std::endl;
+    
+    // Save parameters
+    saveParameters();
+    
+    // Write histograms and tree
+    outputFile_->cd();
+    
+    for (auto& [name, hist] : histograms1D_) {
+        hist->Write();
     }
-    file << "\n";
     
-    file << "# Simulation\n";
-    file << "Realizations " << config_.simulation.numRealizations << "\n";
-    file << "EventsPerRealization " << config_.simulation.eventsPerRealization << "\n";
-    file << "InitialExcitation " << config_.initialExcitation.excitationEnergy << " MeV\n";
+    for (auto& [name, hist] : histograms2D_) {
+        hist->Write();
+    }
     
-    file.close();
-    std::cout << "Parameters saved to: " << filename << std::endl;
+    for (auto& [name, hist] : levelSpectraHistograms_) {
+        hist->Write();
+    }
+    
+    if (cascadeTree_) {
+        cascadeTree_->Write();
+    }
+    
+    // Print summary
+    std::cout << "Output summary:" << std::endl;
+    std::cout << "  1D histograms: " << histograms1D_.size() << std::endl;
+    std::cout << "  2D histograms: " << histograms2D_.size() << std::endl;
+    std::cout << "  Level spectra histograms: " << levelSpectraHistograms_.size() << std::endl;
+    if (cascadeTree_) {
+        std::cout << "  Tree entries: " << cascadeTree_->GetEntries() << std::endl;
+    }
+    
+    outputFile_->Close();
+    delete outputFile_;
+    outputFile_ = nullptr;
+    
+    std::cout << "Output file closed." << std::endl;
 }
 
 } // namespace rainier

@@ -63,6 +63,8 @@ public:
      * @brief Get number of events simulated
      */
     int getNumEvents() const { return events_.size(); }
+	
+	Nucleus& getNucleus()const  {return nucleus_;}
 
 private:
     // Core simulation methods
@@ -110,6 +112,7 @@ private:
     int maxDiscreteLevels_;
     int maxContinuumBins_;
     
+	
     // Statistics
     int numStuckEvents_;
 };

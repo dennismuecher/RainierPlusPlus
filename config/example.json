@@ -135,7 +135,7 @@
   
   "simulation": {
     "numRealizations": 1,
-    "eventsPerRealization": 5000,
+    "eventsPerRealization": 1000,
     "updateInterval": 100,
     "saveInterval": 10000,
     "useParallel": false,
