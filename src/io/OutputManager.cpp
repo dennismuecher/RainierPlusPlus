@@ -157,7 +157,7 @@ void OutputManager::createLevelSpectraHistograms(int realization) {
         
         auto hSpectrum = new TH1D(name.c_str(),
                                   titleStream.str().c_str(),
-                                  200,  // Number of bins
+                                  1000,  // Number of bins
                                   0.0,  // Min energy
                                   config_.initialExcitation.excitationEnergy + 2.0);  // Max energy with buffer
         

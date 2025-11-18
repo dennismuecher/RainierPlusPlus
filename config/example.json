@@ -6,7 +6,7 @@
     "Z": 60,
     "A": 144,
     "Sn": 7.0,
-    "levelsFile": "levels/z060.dat"
+    "levelsFile": "../levels/z060.dat"
   },
   
   "_INITIAL_EXCITATION": "════════════════════════════════════════",
@@ -115,10 +115,10 @@
   
   "continuum": {
     "distribution": "POISSON",
-    "energySpacing": 0.1,
+    "energySpacing": 0.02,
     "forceBinNumber": false,
     "numBins": 100,
-    "maxDiscreteLevel": 20
+    "maxDiscreteLevel": 15
   },
   
   "_INTERNAL_CONVERSION": "════════════════════════════════════════",
@@ -135,7 +135,7 @@
   
   "simulation": {
     "numRealizations": 1,
-    "eventsPerRealization": 1000,
+    "eventsPerRealization": 10000,
     "updateInterval": 100,
     "saveInterval": 10000,
     "useParallel": false,
