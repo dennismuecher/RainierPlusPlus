@@ -18,15 +18,20 @@ namespace rainier {
  *   Element A Z NumLevels
  * 
  * For each level:
- *   LevelNum Energy Spin Parity HalfLife NumGammas
+ *   LevelNum Energy Spin Parity [HalfLife] NumGammas
  *   [For each gamma:]
  *     FinalLevelNum GammaEnergy Pg BranchingRatio ICC
+ * 
+ * Note: HalfLife is optional. If missing, DEFAULT_MAX_HALFLIFE is used.
  * 
  * Example:
  *   Nd 144 60 20
  *   0   0.000   0.0  1  1e20  0
  *   1   0.697   2.0  1  1e15  1
  *       0   0.697   1.0   1.000   0.05
+ *   2   1.234   4.0  1  2
+ *       0   1.234   0.8   0.800   0.02
+ *       1   0.537   0.2   0.200   0.01
  */
 class LevelFileReader {
 public:
@@ -49,7 +54,7 @@ public:
         double energy;            // Excitation energy (MeV)
         double spin;              // Angular momentum
         int parity;               // 0 = negative, 1 = positive
-        double halfLife;          // Half-life (integer in file, converted to fs)
+        double halfLife;          // Half-life (fs)
         std::vector<GammaData> gammas;
     };
 
@@ -77,17 +82,6 @@ public:
         createDiscreteLevels(
             const std::vector<LevelData>& levelDataVec,
             double defaultHalfLife = 1e9);
-
-private:
-    /**
-     * @brief Check if half-life is a placeholder (unknown value)
-     */
-    static bool isUnknownHalfLife(double halfLife);
-
-    /**
-     * @brief Convert half-life from file format to femtoseconds
-     */
-    static double convertHalfLife(double halfLifeFromFile, int numGammas);
 };
 
 } // namespace rainier

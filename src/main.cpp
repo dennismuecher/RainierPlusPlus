@@ -1,60 +1,50 @@
-// main.cpp - RAINIER++ main entry point with JSON config support
+// main.cpp - Fixed version with discrete level loading
 #include "Config.h"
 #include "core/Nucleus.h"
 #include "simulation/DecaySimulator.h"
 #include "io/OutputManager.h"
 #include <iostream>
-#include <string>
-#include <stdexcept>
+#include <exception>
 
 using namespace rainier;
 
-void printBanner() {
+void printHeader() {
     std::cout << "\n";
     std::cout << "╔════════════════════════════════════════════════════════╗\n";
+    std::cout << "║                                                        ║\n";
     std::cout << "║   RAINIER++ - Modern C++ Edition                      ║\n";
-    std::cout << "║   Nuclear Decay Cascade Monte Carlo Simulation        ║\n";
+    std::cout << "║                                                        ║\n";
+    std::cout << "║   Randomizer of Assorted Initial Nuclear              ║\n";
+    std::cout << "║   Intensities and Emissions of Radiation              ║\n";
+    std::cout << "║                                                        ║\n";
     std::cout << "╚════════════════════════════════════════════════════════╝\n";
     std::cout << "\n";
 }
 
-void printUsage(const char* programName) {
-    std::cout << "Usage: " << programName << " [config_file]\n";
-    std::cout << "\n";
-    std::cout << "Arguments:\n";
-    std::cout << "  config_file  Path to JSON configuration file (default: config/example.json)\n";
-    std::cout << "\n";
-    std::cout << "Examples:\n";
-    std::cout << "  " << programName << "                    # Use default config\n";
-    std::cout << "  " << programName << " my_config.json    # Use custom config\n";
-    std::cout << "\n";
-}
-
-int main(int argc, char** argv) {
-    printBanner();
-    
-    // Determine config file
-    std::string configFile = "../config/example.json";
-    if (argc > 1) {
-        if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
-            printUsage(argv[0]);
-            return 0;
-        }
-        configFile = argv[1];
-    }
-    
+int main(int argc, char* argv[]) {
     try {
+        printHeader();
+        
         // Load configuration
-        std::cout << "Loading configuration from: " << configFile << "\n";
+        std::string configFile = (argc > 1) ? argv[1] : "config.dat";
+        std::cout << "═══ Loading Configuration ═══\n";
+        std::cout << "Configuration from: " << configFile << "\n";
         Config config = Config::loadFromFile(configFile);
         config.print();
         
         // Initialize nucleus
-        std::cout << "═══ Initializing Nucleus ═══\n";
+        std::cout << "\n═══ Initializing Nucleus ═══\n";
         Nucleus nucleus(config.nucleus.Z, config.nucleus.A);
+        nucleus.setSn(config.nucleus.Sn);
         
-        std::cout << "Creating " << nucleus.getNumDiscreteLevels() 
-                  << " discrete levels...\n";
+        // Load discrete levels from file
+        std::cout << "Loading discrete levels from: " << config.nucleus.levelsFile << "\n";
+        std::cout << "Maximum levels to read: " << config.continuum.maxDiscreteLevel << "\n";
+        nucleus.loadDiscreteLevels(config.nucleus.levelsFile, 
+                                   config.continuum.maxDiscreteLevel);
+        
+        std::cout << "Loaded " << nucleus.getNumDiscreteLevels() 
+                  << " discrete levels\n";
         std::cout << "Critical energy (Ecrit): " 
                   << nucleus.getCriticalEnergy() << " MeV\n";
         
@@ -62,12 +52,11 @@ int main(int argc, char** argv) {
         int runNumber = 1; // Could be passed as argument
         OutputManager outputMgr(config, runNumber);
         
-      
-		// Run simulation
-		std::cout << "\n═══ Starting Simulations ═══\n";
+        // Run simulation
+        std::cout << "\n═══ Starting Simulations ═══\n";
         std::cout << "Population mode: ";
         
-		switch(config.initialExcitation.mode) {
+        switch(config.initialExcitation.mode) {
             case Config::InitialExcitationConfig::Mode::SINGLE:
                 std::cout << "SINGLE (E=" << config.initialExcitation.excitationEnergy 
                          << " MeV, J=" << config.initialExcitation.spin << ")\n";
@@ -84,21 +73,19 @@ int main(int argc, char** argv) {
                 break;
         }
 
-		for (int real = 0; real < config.simulation.numRealizations; ++real) {
-		    std::cout << "Realization " << real + 1 << " / " 
-		              << config.simulation.numRealizations << "\n";
+        for (int real = 0; real < config.simulation.numRealizations; ++real) {
+            std::cout << "Realization " << real + 1 << " / " 
+                      << config.simulation.numRealizations << "\n";
 
-		    nucleus.buildContinuumLevels(config, real);
-			outputMgr.fillLevelSpectra(real, nucleus);
-			
-		    DecaySimulator simulator(nucleus, config, real);
-		    simulator.run();
+            nucleus.buildContinuumLevels(config, real);
+            outputMgr.fillLevelSpectra(real, nucleus);
+            
+            DecaySimulator simulator(nucleus, config, real);
+            simulator.run();
 
-		    outputMgr.saveRealization(real, simulator);
-		    std::cout << "  Completed.\n\n";
-		}
-		
-		
+            outputMgr.saveRealization(real, simulator);
+            std::cout << "  Completed.\n\n";
+        }
         
         // Finalize output
         std::cout << "\n═══ Finalizing ═══\n";
@@ -107,11 +94,9 @@ int main(int argc, char** argv) {
         std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
         std::cout << "║   Simulation Complete                                 ║\n";
         std::cout << "╚════════════════════════════════════════════════════════╝\n";
-        std::cout << "\n";
-        std::cout << "Output files:\n";
+        std::cout << "\nOutput files:\n";
         std::cout << "  - " << config.output.outputFile << " (ROOT file)\n";
-        std::cout << "  - " << config.output.paramFile << " (parameters)\n";
-        std::cout << "\n";
+        std::cout << "  - " << config.output.paramFile << " (parameters)\n\n";
         
         return 0;
         

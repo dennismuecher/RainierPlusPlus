@@ -1,4 +1,4 @@
-// LevelFileReader.cpp - Implementation of level file parser
+// LevelFileReader.cpp - Fixed to handle missing half-life values
 #include "io/LevelFileReader.h"
 #include "utils/PhysicsConstants.h"
 #include <fstream>
@@ -20,6 +20,7 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
     }
 
     std::cout << "Reading level file: " << filename << std::endl;
+    std::cout << "Searching for Z=" << targetZ << ", A=" << targetA << std::endl;
 
     // Search for the nucleus in the file
     std::string line;
@@ -27,7 +28,7 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
     std::string element;
     int A = 0, Z = 0, numLevelsInFile = 0;
 
-    const int maxSearchLines = 1000000;  // Prevent infinite loop
+    const int maxSearchLines = 1000000;
     int searchCount = 0;
 
     while (std::getline(file, line) && searchCount < maxSearchLines) {
@@ -54,11 +55,13 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
     }
 
     if (numLevelsInFile < 2) {
-        throw std::runtime_error("No levels found in file");
+        throw std::runtime_error("No levels found in file (nLvlTot < 2)");
     }
 
-    // Limit to requested number or available levels
     int levelsToRead = std::min(maxLevels, numLevelsInFile);
+    std::cout << "Reading " << levelsToRead << " levels (max requested: " 
+              << maxLevels << ", available: " << numLevelsInFile << ")" << std::endl;
+    
     std::vector<LevelData> levels;
     levels.reserve(levelsToRead);
 
@@ -66,57 +69,71 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
     for (int lvl = 0; lvl < levelsToRead; ++lvl) {
         if (!std::getline(file, line)) {
             throw std::runtime_error(
-                "Unexpected end of file while reading level " + 
-                std::to_string(lvl));
+                "Unexpected end of file while reading level " + std::to_string(lvl));
         }
 
         std::istringstream levelStream(line);
         LevelData levelData;
 
-        int levelNum, parity;
+        // Try to parse all 6 fields first
+        int levelNum, parity, numGammas;
         double energy, spin, halfLife;
-        int numGammas;
-
-        levelStream >> levelNum >> energy >> spin >> parity >> halfLife >> numGammas;
-
-        if (levelStream.fail()) {
-            throw std::runtime_error(
-                "Failed to parse level line: " + line);
+        
+        // Read first 4 fields that must be present
+        if (!(levelStream >> levelNum >> energy >> spin >> parity)) {
+            throw std::runtime_error("Failed to parse level line " + 
+                                   std::to_string(lvl) + ": " + line);
+        }
+        
+        // Now try to read the remaining fields (halfLife and numGammas)
+        // If halfLife is missing, we'll only get numGammas
+        double field5, field6;
+        bool hasField5 = static_cast<bool>(levelStream >> field5);
+        bool hasField6 = static_cast<bool>(levelStream >> field6);
+        
+        
+        if (hasField5 && hasField6) {
+            // Both fields present: field5=halfLife, field6=numGammas
+            halfLife = field5;
+            numGammas = static_cast<int>(field6);
+        } else if (hasField5 && !hasField6) {
+            // Only one field: must be numGammas, halfLife is missing
+            halfLife = constants::DEFAULT_MAX_HALFLIFE;
+            numGammas = static_cast<int>(field5);
+            std::cout << "  Level " << lvl << ": half-life missing, using default\n";
+        } else {
+            // No additional fields - ground state or bad format
+            if (lvl == 0) {
+                // Ground state: stable, no gammas
+                halfLife = constants::DEFAULT_MAX_HALFLIFE;
+                numGammas = 0;
+            } else {
+                throw std::runtime_error("Failed to parse level line " + 
+                                       std::to_string(lvl) + ": insufficient fields");
+            }
         }
 
-        // Validate and convert data
-        levelNum--;  // Convert to 0-based indexing (file uses 1-based)
+        // Convert from 1-based to 0-based indexing
+        levelNum--;
 
         if (levelNum != lvl) {
-            std::cerr << "Warning: Level numbering mismatch. Expected " 
-                     << lvl << " but got " << levelNum << std::endl;
+            std::cerr << "Warning: Level numbering mismatch. " 
+                     << "Expected " << lvl << " but got " << levelNum << std::endl;
         }
 
-        // Convert parity: file uses -1 for unknown, we use 0/1
+        // Convert parity: -1 for unknown → 0 (negative)
         if (parity == -1) {
-            parity = 0;  // Assume negative if unknown
+            parity = 0;
             std::cerr << "Warning: Unknown parity for level " << lvl 
-                     << ", assuming negative" << std::endl;
+                     << ", assuming negative (0)" << std::endl;
         }
 
-        // Handle special case: half-life might encode number of gammas
-        // if actual half-life is unknown (original RAINIER quirk)
-        if (isUnknownHalfLife(halfLife)) {
-            // Sometimes the half-life field contains the number of gammas
-            // when the actual half-life is not measured
-            if (static_cast<int>(halfLife) == static_cast<int>(halfLife) && 
-                halfLife < 100 && lvl > 0) {
-                numGammas = static_cast<int>(halfLife);
-                halfLife = constants::DEFAULT_MAX_HALFLIFE;
-                std::cerr << "Warning: Level " << lvl 
-                         << " has unknown half-life, using default" << std::endl;
-            }
-        } else {
-            // Convert to femtoseconds
+        // Convert half-life to femtoseconds
+        if (halfLife < constants::DEFAULT_MAX_HALFLIFE) {
             halfLife = halfLife * 1e15;  // Convert to fs
         }
 
-        // Special case: ground state should be stable
+        // Ground state special case
         if (lvl == 0) {
             numGammas = 0;
             halfLife = constants::DEFAULT_MAX_HALFLIFE;
@@ -129,6 +146,7 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
         levelData.halfLife = halfLife;
 
         // Read gamma transitions
+        double totalBR = 0.0;
         for (int gam = 0; gam < numGammas; ++gam) {
             if (!std::getline(file, line)) {
                 throw std::runtime_error(
@@ -145,11 +163,12 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
             gammaStream >> finalLevel >> gammaE >> pg >> br >> icc;
 
             if (gammaStream.fail()) {
-                throw std::runtime_error(
-                    "Failed to parse gamma line: " + line);
+                std::cerr << "Failed to parse gamma line: [" << line << "]" << std::endl;
+                throw std::runtime_error("Failed to parse gamma transition");
             }
 
-            finalLevel--;  // Convert to 0-based indexing
+            // Convert from 1-based to 0-based indexing
+            finalLevel--;
 
             gamma.finalLevelIndex = finalLevel;
             gamma.gammaEnergy = gammaE;
@@ -157,7 +176,15 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
             gamma.branchingRatio = br;
             gamma.icc = icc;
 
+            totalBR += br;
             levelData.gammas.push_back(gamma);
+        }
+
+        // Normalize branching ratios
+        if (totalBR > 0.0 && numGammas > 0) {
+            for (auto& gamma : levelData.gammas) {
+                gamma.branchingRatio /= totalBR;
+            }
         }
 
         levels.push_back(levelData);
@@ -192,7 +219,6 @@ LevelFileReader::createDiscreteLevels(
     }
 
     // Second pass: create transitions
-    // We need all levels created first so we can link them
     for (size_t i = 0; i < levelDataVec.size(); ++i) {
         const auto& data = levelDataVec[i];
         auto& initialLevel = levels[i];
@@ -217,47 +243,14 @@ LevelFileReader::createDiscreteLevels(
                 gammaData.icc
             );
 
-            // Determine transition type
-            auto transType = Transition::determineType(
-                initialLevel->getSpin(),
-                initialLevel->getParity(),
-                finalLevel->getSpin(),
-                finalLevel->getParity(),
-                false  // Will be set correctly by Nucleus based on A
-            );
-            transition->setType(transType);
+            // Transition type will be set by Nucleus based on A parity
+            transition->setType(Transition::Type::NONE);
 
             initialLevel->addTransition(transition);
-        }
-
-        // Normalize branching ratios for this level
-        if (!data.gammas.empty()) {
-            try {
-                initialLevel->normalizeBranchingRatios();
-            } catch (const std::exception& e) {
-                std::cerr << "Warning: Could not normalize branching ratios for level " 
-                         << i << ": " << e.what() << std::endl;
-            }
         }
     }
 
     return levels;
-}
-
-bool LevelFileReader::isUnknownHalfLife(double halfLife) {
-    // Check if half-life is a placeholder value
-    // Original RAINIER uses integers < 100 to indicate unknown half-lives
-    if (halfLife == static_cast<int>(halfLife) && halfLife < 100) {
-        return true;
-    }
-    return false;
-}
-
-double LevelFileReader::convertHalfLife(double halfLifeFromFile, int numGammas) {
-    if (isUnknownHalfLife(halfLifeFromFile)) {
-        return constants::DEFAULT_MAX_HALFLIFE;
-    }
-    return halfLifeFromFile * 1e15;  // Convert to femtoseconds
 }
 
 } // namespace rainier

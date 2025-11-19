@@ -115,7 +115,7 @@
   
   "continuum": {
     "distribution": "POISSON",
-    "energySpacing": 0.02,
+    "energySpacing": 0.1,
     "forceBinNumber": false,
     "numBins": 100,
     "maxDiscreteLevel": 15
