@@ -10,6 +10,84 @@
 #include <iostream>
 #include <cmath>
 
+#include <chrono>
+#include <string>
+#include <unordered_map>
+#include <mutex>
+
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <mutex>
+
+//this is a helper class for debugging code performance: the call of "record" prints the time duration since the last time "record" was called, in microseconds
+
+class TimerHelper {
+public:
+    static void record(const std::string& event, bool verbose, bool addTotal)
+    {
+        using Clock = std::chrono::high_resolution_clock;
+        auto now = Clock::now();
+
+        std::scoped_lock lock(mutex_);
+
+        // Check if we have seen this event before
+        auto it = lastCall_.find(event);
+
+        if (it == lastCall_.end()) {
+            // First time -> just remember the timestamp
+            lastCall_[event] = now;
+            if (verbose) 
+				std::cout << "[" << event << "] first call, no duration yet\n";
+            return;
+        }
+
+        // Compute duration since last call
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            now - it->second
+        );
+
+        // Print the per-call duration
+        if (verbose)
+			std::cout << "[" << event << "] "
+                  << duration.count() << " microseconds since last call\n";
+
+        // Accumulate the total
+        if (addTotal)
+            totals_[event] += duration.count();
+
+        // Update last timestamp
+        lastCall_[event] = now;
+    }
+
+    static void printTotals()
+    {
+        std::scoped_lock lock(mutex_);
+
+        std::cout << "\n=== TOTAL TIME PER EVENT ===\n";
+        for (const auto& [event, total] : totals_) {
+            std::cout << event << ": " << total << " microseconds\n";
+        }
+        std::cout << "=============================\n";
+    }
+
+    static void reset()
+    {
+        std::scoped_lock lock(mutex_);
+        lastCall_.clear();
+        totals_.clear();
+    }
+
+private:
+    static inline std::unordered_map<std::string,
+        std::chrono::high_resolution_clock::time_point> lastCall_;
+
+    static inline std::unordered_map<std::string, long long> totals_;
+    static inline std::mutex mutex_;
+};
+
+
 namespace rainier {
 
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
@@ -58,6 +136,7 @@ DecaySimulator::~DecaySimulator() = default;
 void DecaySimulator::run() {
     std::cout << "  Running simulation..." << std::endl;
     events_.reserve(config_.simulation.eventsPerRealization);
+    TimerHelper::record("simulateEventLoop",false, false);
     
     for (int ev = 0; ev < config_.simulation.eventsPerRealization; ++ev) {
         if (ev % config_.simulation.updateInterval == 0) {
@@ -65,6 +144,7 @@ void DecaySimulator::run() {
                      << config_.simulation.eventsPerRealization << "\r" << std::flush;
         }
         simulateEvent();
+	    TimerHelper::record("simulateEventLoop", false, true);
     }
     
     std::cout << "    Event " << config_.simulation.eventsPerRealization 
@@ -74,6 +154,7 @@ void DecaySimulator::run() {
         std::cout << "  Warning: " << numStuckEvents_ 
                   << " events stuck in isomeric states" << std::endl;
     }
+	TimerHelper::printTotals();
 }
 
 void DecaySimulator::simulateEvent() {
@@ -81,20 +162,27 @@ void DecaySimulator::simulateEvent() {
     
     std::shared_ptr<Level> currentLevel;
     double initialExcitation;
-    selectInitialState(currentLevel, initialExcitation);
+	
+	TimerHelper::record("selectInititalState", false, false);
+    
+	selectInitialState(currentLevel, initialExcitation);
     event.setInitialState(currentLevel, initialExcitation);
     
+	TimerHelper::record("selectInititalState", false, true);
+	
     const int maxSteps = 1000;
     int numSteps = 0;
     double cumulativeTime = 0.0;
-    
+    TimerHelper::record("DecayStep", false, false);
     while (currentLevel && currentLevel->getEnergy() > 0.001 && numSteps < maxSteps) {
         CascadeStep step;
+
         
         if (!performDecayStep(currentLevel, step)) {
             numStuckEvents_++;
             break;
         }
+		TimerHelper::record("DecayStep", false, true);
         
         cumulativeTime += step.timeToDecay;
         step.timeToDecay = cumulativeTime;
@@ -103,7 +191,7 @@ void DecaySimulator::simulateEvent() {
         currentLevel = step.finalLevel;
         numSteps++;
     }
-    
+	
     events_.push_back(event);
 }
 
@@ -143,18 +231,27 @@ bool DecaySimulator::performDecayStep(std::shared_ptr<Level>& currentLevel,
     std::vector<std::shared_ptr<Transition>> discreteTransitions;
     std::vector<BinWidth> binWidths;
     
+    TimerHelper::record("TotalWidth", false, false);
+    
     double totalWidth = calculateTotalWidth(currentLevel, discreteTransitions, binWidths);
     
+    TimerHelper::record("TotalWidth", false, true);
+
     if (totalWidth <= 0.0) {
         return false;  // Stuck - no transitions
     }
     
     // Select transition using two-stage process
     std::shared_ptr<Transition> selectedTransition;
-    if (!selectTransition(currentLevel, discreteTransitions, binWidths, totalWidth, 
+    
+    TimerHelper::record("selectTransition", false, false);
+
+    if (!selectTransition(currentLevel, discreteTransitions, binWidths, totalWidth,
                          selectedTransition, step)) {
+		 
         return false;
     }
+    TimerHelper::record("selectTransition", false, true);
     
     step.timeToDecay = getDecayTime(totalWidth);
     step.finalLevel = selectedTransition->getFinalLevel();
@@ -175,7 +272,7 @@ double DecaySimulator::calculateTotalWidth(const std::shared_ptr<Level>& level,
                                           std::vector<BinWidth>& binWidths) {
     discreteTransitions.clear();
     binWidths.clear();
-    
+    TimerHelper::record("WidthDiscreteTrans", false, false);
     // For discrete levels, use known transitions
     if (level->isDiscrete()) {
         auto discLevel = std::dynamic_pointer_cast<DiscreteLevel>(level);
@@ -185,12 +282,16 @@ double DecaySimulator::calculateTotalWidth(const std::shared_ptr<Level>& level,
         }
         return 0.0;
     }
-    
+    TimerHelper::record("WidthDiscreteTrans", false, true);
+
+    TimerHelper::record("WidthContinuumTrans", false, false);
+
     // For continuum levels, calculate both discrete and continuum widths
     double totalWidth = 0.0;
     totalWidth += calculateDiscreteWidths(level, discreteTransitions);
     totalWidth += calculateContinuumBinWidths(level, binWidths);
-    
+    TimerHelper::record("WidthContinuumTrans", false, true);
+
     return totalWidth;
 }
 
@@ -257,6 +358,8 @@ double DecaySimulator::calculateContinuumBinWidths(const std::shared_ptr<Level>&
     int currentEnergyBin = nucleus_.getEnergyBin(Ex);
     
     // Loop over possible final spins (ΔJ = -2, -1, 0, +1, +2)
+    TimerHelper::record("WidthLoop", false, false);
+
     for (int dJ = -2; dJ <= 2; ++dJ) {
         double finalSpin = spin + dJ;
         if (finalSpin < 0) continue;
@@ -272,11 +375,16 @@ double DecaySimulator::calculateContinuumBinWidths(const std::shared_ptr<Level>&
             int finalSpinBin = Level::spinToBin(finalSpin, nucleus_.isEvenA());
             
             // Loop over energy bins BELOW current energy (energy conservation!)
+            TimerHelper::record("WidthLoopEne", false, false);
+
             for (int energyBin = 0; energyBin < currentEnergyBin; ++energyBin) {
+                TimerHelper::record("WidthLoopNucleus_", false, false);
+
                 const auto& finalLevels = nucleus_.getContinuumLevels(
                     energyBin, finalSpinBin, finalParity
                 );
-                
+                TimerHelper::record("WidthLoopNucleus_", false, true);
+
                 int numLevels = finalLevels.size();
                 if (numLevels == 0) continue;
                 
@@ -305,11 +413,17 @@ double DecaySimulator::calculateContinuumBinWidths(const std::shared_ptr<Level>&
                 // Calculate total width for ALL levels in this bin
                 // Each level gets a Porter-Thomas fluctuated width
                 double binTotalWidth = 0.0;
-                for (int lvl = 0; lvl < numLevels; ++lvl) {
-                    double fluctuation = getPorterThomasFluctuation();
-                    binTotalWidth += strength * levelSpacing * fluctuation * (1.0 + icc);
-                }
-                
+                TimerHelper::record("WidthPorterThomas", false, false);
+                binTotalWidth = strength * levelSpacing * numLevels * (1.0 + icc);
+                //for (int lvl = 0; lvl < numLevels; ++lvl) {
+
+                  //  double fluctuation = getPorterThomasFluctuation();
+                    
+
+                    //binTotalWidth += strength * levelSpacing * fluctuation * (1.0 + icc);
+                //}
+                TimerHelper::record("WidthPorterThomas", false, true);
+                TimerHelper::record("WidthEnd", false, false);
                 if (binTotalWidth > 0) {
                     BinWidth bw;
                     bw.totalWidth = binTotalWidth;
@@ -324,10 +438,14 @@ double DecaySimulator::calculateContinuumBinWidths(const std::shared_ptr<Level>&
                     binWidths.push_back(bw);
                     totalWidth += binTotalWidth;
                 }
+                TimerHelper::record("WidthEnd", false, true);
             }
+            TimerHelper::record("WidthLoopEne", false, true);
+
         }
     }
-    
+    TimerHelper::record("WidthLoop", false, true);
+
     return totalWidth;
 }
 
@@ -456,8 +574,11 @@ double DecaySimulator::getDecayTime(double width) {
 }
 
 double DecaySimulator::getPorterThomasFluctuation() {
-    double gaussian = rng_->Gaus(0.0, 1.0);
-    return gaussian * gaussian;
+    
+    double u = rng_->Rndm();   // Uniform (0,1)
+    return -2.0 * std::log(u);
+    //double gaussian = rng_->Gaus(0.0, 1.0);
+    //return gaussian * gaussian;
 }
 
 double DecaySimulator::getInternalConversionCoeff(double Egamma, int transType, 
