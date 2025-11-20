@@ -90,8 +90,8 @@ Config Config::loadFromFile(const std::string& filename) {
             currentSection = "internalConversion";
             continue;
         }
-        if (line.find("parity") != std::string::npos) {
-            currentSection = "parity";
+        if (line.find("parityModel") != std::string::npos) {
+            currentSection = "parityModel";
             continue;
         }
         
@@ -141,72 +141,64 @@ Config Config::loadFromFile(const std::string& filename) {
             // Initial Excitation section
             
             else if (currentSection == "initialExcitation") {
+
                 if (key == "mode") {
+                    
                     if (value == "SINGLE") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SINGLE;
-                    else if (value == "SELECT") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SELECT;
+                    else if (value == "SELECT") {
+                        config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SELECT;
+                    }
                     else if (value == "SPREAD") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SPREAD;
                     else if (value == "FULL_REACTION") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::FULL_REACTION;
                 }
-                
-                else if (key == "SINGLE_excitationEnergy") config.initialExcitation.excitationEnergy = std::stod(value);
+
+                else if (key == "SINGLE_excitationEnergy")
+                    config.initialExcitation.excitationEnergy = std::stod(value);
+           
                 else if (key == "SINGLE_spin") config.initialExcitation.spin = std::stod(value);
-                else if (key == "SINGLE_parity") config.initialExcitation.parity = std::stoi(value);
-                else if (key == "SPREAD_meanEnergy") config.initialExcitation.meanEnergy = std::stod(value);
-                else if (key == "SPREAD_energySpread") config.initialExcitation.energySpread = std::stod(value);
-                
-                else if (key.find("SELECT_states") != std::string::npos) {
-                    // This is the start of the SELECT_states array
-                    // Read until we find the closing bracket
-                    std::vector<InitialExcitationConfig::SelectState> states;
-                    std::cout <<"Alive" <<std::endl;
-                    while (std::getline(file, line)) {
-                        line = trim(line);
-                        if (line.empty() || line[0] == '/' || line[0] == '#') continue;
-                        std::cout <<"Alive1" <<std::endl;
-                        // Check for end of array
-                        if (line.find("]") != std::string::npos) break;
-                        std::cout <<"Alive2" <<std::endl;
-                        // Skip array opening and comments
-                        if (line.find("[") != std::string::npos) continue;
-                        if (line.find("_SELECT") != std::string::npos) continue;
-                        std::cout <<"Alive3" <<std::endl;
-                        // Parse state object
-                        if (line.find("{") != std::string::npos) {
-                            InitialExcitationConfig::SelectState state;
-                            std::cout <<"Alive4" <<std::endl;
-                            // Read state properties
-                            while (std::getline(file, line)) {
-                                line = trim(line);
-                                if (line.empty()) continue;
-                                if (line.find("}") != std::string::npos) break;
-                                
-                                auto [stateKey, stateValue] = parseLine(line);
-                                if (stateKey == "energy") {
-                                    state.energy = std::stod(stateValue);
-                                } else if (stateKey == "spin") {
-                                    state.spin = std::stod(stateValue);
-                                } else if (stateKey == "parity") {
-                                    state.parity = std::stoi(stateValue);
-                                } else if (stateKey == "branchingRatio") {
-                                    state.branchingRatio = std::stod(stateValue);
-                                }
-                            }
-                            states.push_back(state);
+                else if (key == "SINGLE_parity")
+                    config.initialExcitation.parity = std::stoi(value);
+
+
+                // SELECT mode parameters - Simple one-line-per-state format!
+                else if (key == "SELECT_numStates") {
+                    int numStates = std::stoi(value);
+                    config.initialExcitation.selectStates.resize(numStates);
+                    std::cout << "SELECT mode: expecting " << numStates << " states" << std::endl;
+                }
+                else if (key.find("SELECT_state_") == 0) {
+                    // Extract state number from key (e.g., "SELECT_state_1" -> 1)
+                    int stateNum = std::stoi(key.substr(13)); // Skip "SELECT_state_"
+                    
+                    if (stateNum > 0 && stateNum <= static_cast<int>(config.initialExcitation.selectStates.size())) {
+                        // Parse the space-separated values: "energy spin parity branchingRatio"
+                        std::istringstream iss(value);
+                        double energy, spin, branchingRatio;
+                        int parity;
+                        
+                        if (iss >> energy >> spin >> parity >> branchingRatio) {
+                            config.initialExcitation.selectStates[stateNum - 1].energy = energy;
+                            config.initialExcitation.selectStates[stateNum - 1].spin = spin;
+                            config.initialExcitation.selectStates[stateNum - 1].parity = parity;
+                            config.initialExcitation.selectStates[stateNum - 1].branchingRatio = branchingRatio;
+                            
+                            std::cout << "  Parsed SELECT state " << stateNum << ": "
+                            << "E=" << energy << " MeV, J=" << spin << ", "
+                            << "π=" << (parity == 1 ? "+" : "-") << ", BR=" << branchingRatio << std::endl;
+                        } else {
+                            std::cerr << "Error parsing SELECT_state_" << stateNum
+                            << ": invalid format '" << value << "'" << std::endl;
+                            std::cerr << "Expected format: 'energy spin parity branchingRatio'" << std::endl;
                         }
-                    }
-                    
-                    config.initialExcitation.selectStates = states;
-                    
-                    // Validate that branching ratios sum to 1.0
-                    double brSum = 0.0;
-                    for (const auto& state : states) {
-                        brSum += state.branchingRatio;
-                    }
-                    if (std::abs(brSum - 1.0) > 0.01) {
-                        std::cerr << "Warning: SELECT branching ratios sum to " << brSum
-                                  << " (should be 1.0)\n";
+                    } else {
+                        std::cerr << "Warning: SELECT_state_" << stateNum
+                        << " is out of range (numStates="
+                        << config.initialExcitation.selectStates.size() << ")" << std::endl;
                     }
                 }
+                
+                else if (key == "SPREAD_meanEnergy") config.initialExcitation.meanEnergy = std::stod(value);
+                else if (key == "SPREAD_energySpread") config.initialExcitation.energySpread = std::stod(value);
                 
             }
             
@@ -242,7 +234,7 @@ Config Config::loadFromFile(const std::string& filename) {
                 }
             }
             // Parity section
-            else if (currentSection == "parity") {
+            else if (currentSection == "parityModel") {
                 if (key == "model") {
                     if (value == "EQUIPARTITION") config.parity.model = Config::ParityConfig::Model::EQUIPARTITION;
                     else if (value == "ENERGY_DEPENDENT") config.parity.model = Config::ParityConfig::Model::ENERGY_DEPENDENT;

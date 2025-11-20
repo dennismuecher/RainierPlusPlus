@@ -22,12 +22,12 @@
     "_SINGLE_note": "parity: 1=positive, 0=negative",
     
     "_SELECT_parameters": "─── For mode: SELECT (Beta-decay-like) ───",
-    "SELECT_states": [
-      {"energy": 7.5, "spin": 1.0, "parity": 0, "branchingRatio": 0.7},
-      {"energy": 6.8, "spin": 2.0, "parity": 0, "branchingRatio": 0.3}
-    ],
+    "SELECT_numStates": 2,
+    "SELECT_state_1": "7.5 1.0 0 0.7",
+    "SELECT_state_2": "6.8 5.0 0 0.3",
+    "_SELECT_format": "Format: energy(MeV) spin(ħ) parity(0=neg,1=pos) branchingRatio",
     "_SELECT_note": "Branching ratios must sum to 1.0",
-    
+ 
     "_SPREAD_parameters": "─── For mode: SPREAD ((n,γ)-like) ───",
     "SPREAD_meanEnergy": 7.0,
     "SPREAD_energySpread": 0.5,
@@ -101,7 +101,7 @@
   "_PARITY": "════════════════════════════════════════",
   "_parity_models": "EQUIPARTITION, ENERGY_DEPENDENT",
   
-  "parity": {
+  "parityModel": {
     "model": "ENERGY_DEPENDENT",
     
     "_ENERGY_DEPENDENT_parameters": "─── For model: ENERGY_DEPENDENT ───",

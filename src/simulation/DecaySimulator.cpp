@@ -271,11 +271,12 @@ void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level,
             
             // If not in discrete, find/create in continuum
             if (!foundLevel) {
-                int spinBin = nucleus_.isEvenA() ? static_cast<int>(spin)
-                                                 : static_cast<int>(spin - 0.5);
+               
+                int energyBin = nucleus_.getEnergyBin(excitationEnergy);
+                int spinBin = Level::spinToBin(spin, nucleus_.isEvenA());
                 
                 // Get levels in this E-J-π bin
-                auto contLevels = nucleus_.getContinuumLevels(excitationEnergy, spinBin, parity);
+                auto contLevels = nucleus_.getContinuumLevels(energyBin, spinBin, parity);
                 
                 if (!contLevels.empty()) {
                     // Randomly select a level within this bin
