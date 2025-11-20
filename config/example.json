@@ -115,7 +115,7 @@
   
   "continuum": {
     "distribution": "POISSON",
-    "energySpacing": 0.1,
+    "energySpacing": 0.025,
     "forceBinNumber": false,
     "numBins": 100,
     "maxDiscreteLevel": 15
@@ -135,7 +135,7 @@
   
   "simulation": {
     "numRealizations": 1,
-    "eventsPerRealization": 1000000,
+    "eventsPerRealization": 10000,
     "updateInterval": 100,
     "saveInterval": 10000,
     "useParallel": false,
