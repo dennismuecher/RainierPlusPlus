@@ -139,6 +139,7 @@ Config Config::loadFromFile(const std::string& filename) {
                 }
             }
             // Initial Excitation section
+            
             else if (currentSection == "initialExcitation") {
                 if (key == "mode") {
                     if (value == "SINGLE") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SINGLE;
@@ -146,12 +147,69 @@ Config Config::loadFromFile(const std::string& filename) {
                     else if (value == "SPREAD") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SPREAD;
                     else if (value == "FULL_REACTION") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::FULL_REACTION;
                 }
-                else if (key == "excitationEnergy") config.initialExcitation.excitationEnergy = std::stod(value);
-                else if (key == "spin") config.initialExcitation.spin = std::stod(value);
-                else if (key == "parity") config.initialExcitation.parity = std::stoi(value);
-                else if (key == "meanEnergy") config.initialExcitation.meanEnergy = std::stod(value);
-                else if (key == "energySpread") config.initialExcitation.energySpread = std::stod(value);
+                
+                else if (key == "SINGLE_excitationEnergy") config.initialExcitation.excitationEnergy = std::stod(value);
+                else if (key == "SINGLE_spin") config.initialExcitation.spin = std::stod(value);
+                else if (key == "SINGLE_parity") config.initialExcitation.parity = std::stoi(value);
+                else if (key == "SPREAD_meanEnergy") config.initialExcitation.meanEnergy = std::stod(value);
+                else if (key == "SPREAD_energySpread") config.initialExcitation.energySpread = std::stod(value);
+                
+                else if (key.find("SELECT_states") != std::string::npos) {
+                    // This is the start of the SELECT_states array
+                    // Read until we find the closing bracket
+                    std::vector<InitialExcitationConfig::SelectState> states;
+                    std::cout <<"Alive" <<std::endl;
+                    while (std::getline(file, line)) {
+                        line = trim(line);
+                        if (line.empty() || line[0] == '/' || line[0] == '#') continue;
+                        std::cout <<"Alive1" <<std::endl;
+                        // Check for end of array
+                        if (line.find("]") != std::string::npos) break;
+                        std::cout <<"Alive2" <<std::endl;
+                        // Skip array opening and comments
+                        if (line.find("[") != std::string::npos) continue;
+                        if (line.find("_SELECT") != std::string::npos) continue;
+                        std::cout <<"Alive3" <<std::endl;
+                        // Parse state object
+                        if (line.find("{") != std::string::npos) {
+                            InitialExcitationConfig::SelectState state;
+                            std::cout <<"Alive4" <<std::endl;
+                            // Read state properties
+                            while (std::getline(file, line)) {
+                                line = trim(line);
+                                if (line.empty()) continue;
+                                if (line.find("}") != std::string::npos) break;
+                                
+                                auto [stateKey, stateValue] = parseLine(line);
+                                if (stateKey == "energy") {
+                                    state.energy = std::stod(stateValue);
+                                } else if (stateKey == "spin") {
+                                    state.spin = std::stod(stateValue);
+                                } else if (stateKey == "parity") {
+                                    state.parity = std::stoi(stateValue);
+                                } else if (stateKey == "branchingRatio") {
+                                    state.branchingRatio = std::stod(stateValue);
+                                }
+                            }
+                            states.push_back(state);
+                        }
+                    }
+                    
+                    config.initialExcitation.selectStates = states;
+                    
+                    // Validate that branching ratios sum to 1.0
+                    double brSum = 0.0;
+                    for (const auto& state : states) {
+                        brSum += state.branchingRatio;
+                    }
+                    if (std::abs(brSum - 1.0) > 0.01) {
+                        std::cerr << "Warning: SELECT branching ratios sum to " << brSum
+                                  << " (should be 1.0)\n";
+                    }
+                }
+                
             }
+            
             // Simulation section
             else if (currentSection == "simulation") {
                 if (key == "numRealizations") config.simulation.numRealizations = std::stoi(value);
@@ -339,6 +397,15 @@ void Config::print() const {
             break;
         case InitialExcitationConfig::Mode::SELECT:
             std::cout << "SELECT (Beta-decay-like)\n";
+            std::cout << "  Number of states: " << initialExcitation.selectStates.size() << "\n";
+            for (size_t i = 0; i < initialExcitation.selectStates.size(); ++i) {
+                const auto& state = initialExcitation.selectStates[i];
+                std::cout << "    State " << i+1 << ": "
+                          << "E=" << state.energy << " MeV, "
+                          << "J=" << state.spin << ", "
+                          << "π=" << (state.parity == 1 ? "+" : "-") << ", "
+                          << "BR=" << state.branchingRatio << "\n";
+            }
             break;
         case InitialExcitationConfig::Mode::SPREAD:
             std::cout << "SPREAD (Energy spread with spin distribution)\n";

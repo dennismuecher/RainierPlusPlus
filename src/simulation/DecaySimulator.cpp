@@ -187,33 +187,125 @@ void DecaySimulator::simulateEvent() {
     events_.push_back(event);
 }
 
-void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level, 
+void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level,
                                        double& excitationEnergy) {
-    excitationEnergy = config_.initialExcitation.excitationEnergy;
-    double spin = config_.initialExcitation.spin;
-    int parity = config_.initialExcitation.parity;
     
-    if (excitationEnergy < nucleus_.getCriticalEnergy()) {
-        for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
-            auto discLevel = nucleus_.getDiscreteLevel(i);
-            if (std::abs(discLevel->getEnergy() - excitationEnergy) < 0.01 &&
-                std::abs(discLevel->getSpin() - spin) < 0.1 &&
-                discLevel->getParity() == parity) {
-                level = discLevel;
-                return;
+    // Handle different population modes
+    switch (config_.initialExcitation.mode) {
+        
+        case Config::InitialExcitationConfig::Mode::SINGLE: {
+            // Original SINGLE mode implementation
+            excitationEnergy = config_.initialExcitation.excitationEnergy;
+            double spin = config_.initialExcitation.spin;
+            int parity = config_.initialExcitation.parity;
+            
+            if (excitationEnergy < nucleus_.getCriticalEnergy()) {
+                for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
+                    auto lvl = nucleus_.getDiscreteLevel(i);
+                    if (std::abs(lvl->getEnergy() - excitationEnergy) < 0.001 &&
+                        std::abs(lvl->getSpin() - spin) < 0.1 &&
+                        lvl->getParity() == parity) {
+                        level = lvl;
+                        return;
+                    }
+                }
             }
+        
+            int energyBin = nucleus_.getEnergyBin(excitationEnergy);
+            int spinBin = Level::spinToBin(spin, nucleus_.isEvenA());
+               
+               const auto& levels = nucleus_.getContinuumLevels(energyBin, spinBin, parity);
+               if (!levels.empty()) {
+                   int randomIndex = rng_->Integer(levels.size());
+                   level = levels[randomIndex];
+               }
+            break;
         }
-    }
-    
-    int energyBin = nucleus_.getEnergyBin(excitationEnergy);
-    int spinBin = Level::spinToBin(spin, nucleus_.isEvenA());
-    
-    const auto& levels = nucleus_.getContinuumLevels(energyBin, spinBin, parity);
-    if (!levels.empty()) {
-        int randomIndex = rng_->Integer(levels.size());
-        level = levels[randomIndex];
+        
+        case Config::InitialExcitationConfig::Mode::SELECT: {
+            // SELECT mode: Choose state based on branching ratios
+            // Following original RAINIER.C lines 520-535
+            
+            if (config_.initialExcitation.selectStates.empty()) {
+                throw std::runtime_error("SELECT mode requires selectStates to be defined");
+            }
+            
+            // Random selection based on cumulative branching ratios
+            double randomBR = rng_->Uniform(1.0);
+            double cumulativeBR = 0.0;
+            
+            const Config::InitialExcitationConfig::SelectState* selectedState = nullptr;
+            
+            for (const auto& state : config_.initialExcitation.selectStates) {
+                cumulativeBR += state.branchingRatio;
+                if (randomBR <= cumulativeBR) {
+                    selectedState = &state;
+                    break;
+                }
+            }
+            
+            if (!selectedState) {
+                // Fallback to last state (should not happen if BRs sum to 1.0)
+                selectedState = &config_.initialExcitation.selectStates.back();
+            }
+            
+            // Now find the level corresponding to this state
+            excitationEnergy = selectedState->energy;
+            double spin = selectedState->spin;
+            int parity = selectedState->parity;
+            
+            // Try to find exact match in discrete levels first
+            bool foundLevel = false;
+            if (excitationEnergy < nucleus_.getCriticalEnergy()) {
+                for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
+                    auto lvl = nucleus_.getDiscreteLevel(i);
+                    if (std::abs(lvl->getEnergy() - excitationEnergy) < 0.001 &&
+                        std::abs(lvl->getSpin() - spin) < 0.1 &&
+                        lvl->getParity() == parity) {
+                        level = lvl;
+                        foundLevel = true;
+                        break;
+                    }
+                }
+            }
+            
+            // If not in discrete, find/create in continuum
+            if (!foundLevel) {
+                int spinBin = nucleus_.isEvenA() ? static_cast<int>(spin)
+                                                 : static_cast<int>(spin - 0.5);
+                
+                // Get levels in this E-J-π bin
+                auto contLevels = nucleus_.getContinuumLevels(excitationEnergy, spinBin, parity);
+                
+                if (!contLevels.empty()) {
+                    // Randomly select a level within this bin
+                    int randomIndex = rng_->Integer(contLevels.size());
+                    level = contLevels[randomIndex];
+                    excitationEnergy = level->getEnergy();
+                } else {
+                    // This shouldn't happen if continuum is properly built
+                    throw std::runtime_error(
+                        "Could not find level for SELECT state: E=" +
+                        std::to_string(excitationEnergy) + " MeV, J=" +
+                        std::to_string(spin) + ", π=" + std::to_string(parity)
+                    );
+                }
+            }
+            break;
+        }
+        
+        case Config::InitialExcitationConfig::Mode::SPREAD:
+            // To be implemented later
+            throw std::runtime_error("SPREAD mode not yet implemented");
+            break;
+            
+        case Config::InitialExcitationConfig::Mode::FULL_REACTION:
+            // To be implemented later
+            throw std::runtime_error("FULL_REACTION mode not yet implemented");
+            break;
     }
 }
+
 
 bool DecaySimulator::performDecayStep(std::shared_ptr<Level>& currentLevel,
                                       CascadeStep& step) {

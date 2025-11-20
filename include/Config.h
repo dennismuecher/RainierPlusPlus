@@ -116,13 +116,32 @@ public:
         enum class Mode { SINGLE, SELECT, SPREAD, FULL_REACTION };
         Mode mode = Mode::SINGLE;
         
+        // SINGLE mode parameters
         double excitationEnergy = 8.0;  // MeV
         double spin = 0.5;
         int parity = 1;
         
+        // SELECT mode parameters (beta-decay-like)
+        struct SelectState {
+            double energy;
+            double spin;
+            int parity;
+            double branchingRatio;
+            
+            SelectState() : energy(0), spin(0), parity(1), branchingRatio(0) {}
+            SelectState(double e, double s, int p, double br)
+                : energy(e), spin(s), parity(p), branchingRatio(br) {}
+        };
+        std::vector<SelectState> selectStates;
+        
+        // SPREAD mode parameters
         double meanEnergy = 8.0;
         double energySpread = 0.5;
+        
+        // FULL_REACTION mode parameters
+        std::string populationFile;
     };
+
 
     // Simulation parameters
     struct SimulationConfig {

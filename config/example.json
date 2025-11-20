@@ -13,23 +13,23 @@
   "_modes": "SINGLE, SELECT, SPREAD, FULL_REACTION",
   
   "initialExcitation": {
-    "mode": "SINGLE",
+    "mode": "SELECT",
     
     "_SINGLE_parameters": "─── For mode: SINGLE (DICEBOX-like) ───",
-    "SINGLE_excitationEnergy": 8.0,
+    "SINGLE_excitationEnergy": 7.0,
     "SINGLE_spin": 0.5,
     "SINGLE_parity": 1,
     "_SINGLE_note": "parity: 1=positive, 0=negative",
     
     "_SELECT_parameters": "─── For mode: SELECT (Beta-decay-like) ───",
     "SELECT_states": [
-      {"energy": 2.5, "spin": 1.0, "parity": 0, "branchingRatio": 0.7},
-      {"energy": 3.0, "spin": 2.0, "parity": 0, "branchingRatio": 0.3}
+      {"energy": 7.5, "spin": 1.0, "parity": 0, "branchingRatio": 0.7},
+      {"energy": 6.8, "spin": 2.0, "parity": 0, "branchingRatio": 0.3}
     ],
     "_SELECT_note": "Branching ratios must sum to 1.0",
     
     "_SPREAD_parameters": "─── For mode: SPREAD ((n,γ)-like) ───",
-    "SPREAD_meanEnergy": 8.0,
+    "SPREAD_meanEnergy": 7.0,
     "SPREAD_energySpread": 0.5,
     "_SPREAD_note": "energySpread is Gaussian FWHM in MeV",
     
