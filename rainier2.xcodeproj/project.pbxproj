@@ -70,6 +70,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7D2FF9712ED1BC960042B356 /* example.yaml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = example.yaml; sourceTree = "<group>"; };
 		7D5E60892EC9866E00042715 /* rainier2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rainier2; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D5E60942EC9873D00042715 /* a.out */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = a.out; sourceTree = "<group>"; };
 		7D5E60952EC9873D00042715 /* apple-sdk.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "apple-sdk.cpp"; sourceTree = "<group>"; };
@@ -406,6 +407,7 @@
 			isa = PBXGroup;
 			children = (
 				7D5E60E42EC9873D00042715 /* example.json */,
+				7D2FF9712ED1BC960042B356 /* example.yaml */,
 			);
 			path = config;
 			sourceTree = "<group>";

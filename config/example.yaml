@@ -1,0 +1,217 @@
+# =============================================================================
+# RAINIER++ Configuration File
+# =============================================================================
+# This file controls all aspects of the nuclear decay cascade simulation.
+# Set the main 'mode' or 'model' fields; parameters for inactive options are ignored.
+
+# =============================================================================
+# NUCLEUS PROPERTIES
+# =============================================================================
+nucleus:
+  Z: 60                              # Atomic number (protons)
+  A: 144                             # Mass number (protons + neutrons)
+  Sn: 7.0                            # Neutron separation energy (MeV)
+  levelsFile: ../levels/z060.dat    # Path to experimental level data file
+
+# =============================================================================
+# INITIAL EXCITATION
+# =============================================================================
+# Available modes: SINGLE, SELECT, SPREAD, FULL_REACTION
+
+initialExcitation:
+  mode: SPREAD                       # Choose excitation mode
+
+  # ---------------------------------------------------------------------------
+  # SINGLE mode (DICEBOX-like): Single initial state
+  # ---------------------------------------------------------------------------
+  SINGLE:
+    excitationEnergy: 7.0            # Initial excitation energy (MeV)
+    spin: 0.5                        # Initial spin (ħ units)
+    parity: 1                        # Parity: 1 = positive, 0 = negative
+
+  # ---------------------------------------------------------------------------
+  # SELECT mode (Beta-decay-like): Multiple discrete initial states
+  # ---------------------------------------------------------------------------
+  SELECT:
+    numStates: 2
+    states:
+      - energy: 7.5                  # Energy (MeV)
+        spin: 1.0                    # Spin (ħ)
+        parity: 0                    # Parity (0=neg, 1=pos)
+        branchingRatio: 0.7          # Branching ratio (must sum to 1.0)
+      
+      - energy: 6.8
+        spin: 5.0
+        parity: 0
+        branchingRatio: 0.3
+
+  # ---------------------------------------------------------------------------
+  # SPREAD mode ((n,γ)-like): Gaussian energy distribution
+  # ---------------------------------------------------------------------------
+  SPREAD:
+    meanEnergy: 7.0                  # Mean excitation energy (MeV)
+    energySpread: 0.5                # Gaussian FWHM (MeV)
+
+  # ---------------------------------------------------------------------------
+  # FULL_REACTION mode (TALYS): External population file
+  # ---------------------------------------------------------------------------
+  FULL_REACTION:
+    populationFile: talys_population.dat
+
+# =============================================================================
+# LEVEL DENSITY
+# =============================================================================
+# Available models: BSFG, CTM, TABLE, USER_DEFINED
+
+levelDensity:
+  model: BSFG                        # Choose level density model
+
+  # ---------------------------------------------------------------------------
+  # BSFG (Back-Shifted Fermi Gas) parameters
+  # ---------------------------------------------------------------------------
+  BSFG:
+    a: 15.0                          # Level density parameter (MeV^-1)
+    E1: 1.0                          # Back-shift parameter (MeV)
+    useEnergyDependent: true         # Use energy-dependent a(E)
+    aAsymptotic: 15.0                # Asymptotic a value (MeV^-1)
+    shellCorrection: 5.0             # Shell correction W (MeV)
+    damping: 0.05                    # Damping parameter γ
+    # Formula: a(E) = ã[1 + (W/E)(1 - exp(-γE))]
+
+  # ---------------------------------------------------------------------------
+  # CTM (Constant Temperature Model) parameters
+  # ---------------------------------------------------------------------------
+  CTM:
+    T: 0.5                           # Nuclear temperature (MeV)
+    E0: 0.0                          # Energy shift (MeV)
+    # Formula: ρ(E) ∝ exp((E-E0)/T)
+
+  # ---------------------------------------------------------------------------
+  # TABLE parameters: Read from file
+  # ---------------------------------------------------------------------------
+  TABLE:
+    file: level_density.dat
+
+# =============================================================================
+# SPIN CUTOFF
+# =============================================================================
+# Available models: VON_EGIDY_05, VON_EGIDY_09, TALYS, SINGLE_PARTICLE, RIGID_SPHERE
+
+spinCutoff:
+  model: TALYS                       # Choose spin cutoff model
+
+  # ---------------------------------------------------------------------------
+  # TALYS parameters
+  # ---------------------------------------------------------------------------
+  TALYS:
+    spinCutoffD: 3.0                 # Discrete region spin cutoff
+    Ed: 2.0                          # Matching energy (MeV)
+
+  # Note: VON_EGIDY models require no parameters
+
+# =============================================================================
+# GAMMA STRENGTH FUNCTIONS
+# =============================================================================
+
+gammaStrength:
+  
+  # ---------------------------------------------------------------------------
+  # E1 (Electric Dipole) Strength Function
+  # ---------------------------------------------------------------------------
+  # Available models: GEN_LORENTZ, EGLO, KMF, KOP_CHRIEN, STD_LORENTZ
+  
+  e1Model: GEN_LORENTZ
+  
+  e1Resonances:
+    - energy: 15.0                   # Resonance energy (MeV)
+      width: 5.0                     # Width (MeV)
+      sigma: 300.0                   # Cross section (mb)
+  
+  e1_constantT: 0.5                  # Constant temperature (MeV) - for GEN_LORENTZ/EGLO
+
+  # ---------------------------------------------------------------------------
+  # M1 (Magnetic Dipole) Strength Function
+  # ---------------------------------------------------------------------------
+  # Available models: STD_LORENTZ, SINGLE_PARTICLE
+  
+  m1Model: STD_LORENTZ
+  
+  m1Resonances:
+    - energy: 7.0                    # Resonance energy (MeV)
+      width: 4.0                     # Width (MeV)
+      sigma: 1.0                     # Cross section (mb)
+
+  # ---------------------------------------------------------------------------
+  # E2 (Electric Quadrupole) Strength Function
+  # ---------------------------------------------------------------------------
+  # Available models: STD_LORENTZ, SINGLE_PARTICLE
+  
+  e2Model: STD_LORENTZ
+  e2Energy: 12.0                     # Resonance energy (MeV)
+  e2Width: 4.0                       # Width (MeV)
+  e2Sigma: 5.0                       # Cross section (mb)
+
+# =============================================================================
+# PARITY DISTRIBUTION
+# =============================================================================
+# Available models: EQUIPARTITION, ENERGY_DEPENDENT
+
+parityModel:
+  model: ENERGY_DEPENDENT
+
+  # ---------------------------------------------------------------------------
+  # ENERGY_DEPENDENT parameters
+  # ---------------------------------------------------------------------------
+  ENERGY_DEPENDENT:
+    parC: 0.5                        # Parameter C
+    parD: 2.0                        # Parameter D (MeV)
+    # Formula: P(π=+)/P(π=-) = exp[parC × (E - parD)]
+
+# =============================================================================
+# CONTINUUM LEVEL SCHEME
+# =============================================================================
+# Available distributions: POISSON, WIGNER
+
+continuum:
+  distribution: POISSON              # Level spacing distribution
+  energySpacing: 0.025               # Energy bin width (MeV)
+  forceBinNumber: false              # Force specific number of bins
+  numBins: 100                       # Number of bins (if forceBinNumber=true)
+  maxDiscreteLevel: 15               # Maximum index of discrete levels
+
+# =============================================================================
+# INTERNAL CONVERSION
+# =============================================================================
+
+internalConversion:
+  enabled: true                      # Enable/disable internal conversion
+  model: BRICC                       # BRICC or TABLE
+  briccModel: F                      # F=Frozen, R=Relativistic, S=Screened
+  
+  # For TABLE model:
+  # tableFile: icc_table.dat
+
+# =============================================================================
+# SIMULATION PARAMETERS
+# =============================================================================
+
+simulation:
+  numRealizations: 1                 # Number of independent realizations
+  eventsPerRealization: 100000        # Events per realization
+  updateInterval: 1000                # Progress update interval (events)
+  saveInterval: 10000                # Data save interval (events)
+  useParallel: false                 # Enable parallel execution (OpenMP)
+  randomSeed: 12345                  # Random number seed (0 = time-based)
+
+# =============================================================================
+# OUTPUT CONFIGURATION
+# =============================================================================
+
+output:
+  outputFile: output.root            # ROOT output file
+  paramFile: parameters.dat          # Parameter log file
+  saveTree: true                     # Save event-by-event tree
+  saveLevelPopulations: true         # Save level population histograms
+  gammaSpectrumBins: 1000            # Number of bins in gamma spectrum
+  maxGammaEnergy: 20.0               # Maximum gamma energy (MeV)
+  maxPlotSpin: 20.0                  # Maximum spin for plots

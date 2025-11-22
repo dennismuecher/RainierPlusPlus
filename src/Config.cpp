@@ -1,5 +1,6 @@
-// Config.cpp - Enhanced configuration with JSON support
+// Config.cpp - Configuration with YAML support
 #include "Config.h"
+#include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -7,312 +8,403 @@
 
 namespace rainier {
 
-// Simple JSON parser (avoids external dependencies)
-// For production use, consider nlohmann/json or similar
-namespace {
-    std::string trim(const std::string& str) {
-        size_t first = str.find_first_not_of(" \t\n\r");
-        if (first == std::string::npos) return "";
-        size_t last = str.find_last_not_of(" \t\n\r");
-        return str.substr(first, last - first + 1);
-    }
-    
-    std::pair<std::string, std::string> parseLine(const std::string& line) {
-        size_t colon = line.find(':');
-        if (colon == std::string::npos) return {"", ""};
-        
-        std::string key = trim(line.substr(0, colon));
-        std::string value = trim(line.substr(colon + 1));
-        
-        // Remove quotes and commas
-        if (!key.empty() && key.front() == '"') key = key.substr(1, key.length() - 2);
-        if (!value.empty() && value.back() == ',') value = value.substr(0, value.length() - 1);
-        if (!value.empty() && value.front() == '"' && value.back() == '"') 
-            value = value.substr(1, value.length() - 2);
-            
-        return {key, value};
-    }
-}
-
 Config Config::loadFromFile(const std::string& filename) {
     Config config;
-    std::ifstream file(filename);
     
-    if (!file.is_open()) {
-        std::cerr << "Warning: Could not open config file: " << filename << std::endl;
+    try {
+        YAML::Node yaml = YAML::LoadFile(filename);
+        
+        std::cout << "Loading configuration from: " << filename << std::endl;
+        
+        // =================================================================
+        // NUCLEUS SECTION
+        // =================================================================
+        if (yaml["nucleus"]) {
+            auto nucleus = yaml["nucleus"];
+            if (nucleus["Z"]) config.nucleus.Z = nucleus["Z"].as<int>();
+            if (nucleus["A"]) config.nucleus.A = nucleus["A"].as<int>();
+            if (nucleus["Sn"]) config.nucleus.Sn = nucleus["Sn"].as<double>();
+            if (nucleus["levelsFile"]) 
+                config.nucleus.levelsFile = nucleus["levelsFile"].as<std::string>();
+        }
+        
+        // =================================================================
+        // INITIAL EXCITATION SECTION
+        // =================================================================
+        if (yaml["initialExcitation"]) {
+            auto init = yaml["initialExcitation"];
+            
+            // Mode selection
+            if (init["mode"]) {
+                std::string mode = init["mode"].as<std::string>();
+                if (mode == "SINGLE") 
+                    config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SINGLE;
+                else if (mode == "SELECT") 
+                    config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SELECT;
+                else if (mode == "SPREAD") 
+                    config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SPREAD;
+                else if (mode == "FULL_REACTION") 
+                    config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::FULL_REACTION;
+            }
+            
+            // SINGLE mode parameters
+            if (init["SINGLE"]) {
+                auto single = init["SINGLE"];
+                if (single["excitationEnergy"]) 
+                    config.initialExcitation.excitationEnergy = single["excitationEnergy"].as<double>();
+                if (single["spin"]) 
+                    config.initialExcitation.spin = single["spin"].as<double>();
+                if (single["parity"]) 
+                    config.initialExcitation.parity = single["parity"].as<int>();
+            }
+            
+            // SELECT mode parameters
+            if (init["SELECT"] && init["SELECT"]["states"]) {
+                config.initialExcitation.selectStates.clear();
+                for (const auto& state : init["SELECT"]["states"]) {
+                    Config::InitialExcitationConfig::SelectState s;
+                    s.energy = state["energy"].as<double>();
+                    s.spin = state["spin"].as<double>();
+                    s.parity = state["parity"].as<int>();
+                    s.branchingRatio = state["branchingRatio"].as<double>();
+                    config.initialExcitation.selectStates.push_back(s);
+                }
+            }
+            
+            // SPREAD mode parameters
+            if (init["SPREAD"]) {
+                auto spread = init["SPREAD"];
+                if (spread["meanEnergy"])
+                    config.initialExcitation.meanEnergy = spread["meanEnergy"].as<double>();
+                if (spread["energySpread"])
+                    config.initialExcitation.energySpread = spread["energySpread"].as<double>();
+            }
+            
+            // FULL_REACTION mode parameters
+            if (init["FULL_REACTION"] && init["FULL_REACTION"]["populationFile"]) {
+                config.initialExcitation.populationFile = 
+                    init["FULL_REACTION"]["populationFile"].as<std::string>();
+            }
+        }
+        
+        // =================================================================
+        // LEVEL DENSITY SECTION
+        // =================================================================
+        if (yaml["levelDensity"]) {
+            auto ld = yaml["levelDensity"];
+            
+            // Model selection
+            if (ld["model"]) {
+                std::string model = ld["model"].as<std::string>();
+                if (model == "BSFG") 
+                    config.levelDensity.model = Config::LevelDensityConfig::Model::BSFG;
+                else if (model == "CTM") 
+                    config.levelDensity.model = Config::LevelDensityConfig::Model::CTM;
+                else if (model == "TABLE") 
+                    config.levelDensity.model = Config::LevelDensityConfig::Model::TABLE;
+                else if (model == "USER_DEFINED") 
+                    config.levelDensity.model = Config::LevelDensityConfig::Model::USER_DEFINED;
+            }
+            
+            // BSFG parameters
+            if (ld["BSFG"]) {
+                auto bsfg = ld["BSFG"];
+                if (bsfg["a"]) config.levelDensity.a = bsfg["a"].as<double>();
+                if (bsfg["E1"]) config.levelDensity.E1 = bsfg["E1"].as<double>();
+                if (bsfg["useEnergyDependent"]) 
+                    config.levelDensity.useEnergyDependentA = bsfg["useEnergyDependent"].as<bool>();
+                if (bsfg["aAsymptotic"]) 
+                    config.levelDensity.aAsymptotic = bsfg["aAsymptotic"].as<double>();
+                if (bsfg["shellCorrection"]) 
+                    config.levelDensity.shellCorrectionW = bsfg["shellCorrection"].as<double>();
+                if (bsfg["damping"]) 
+                    config.levelDensity.dampingGamma = bsfg["damping"].as<double>();
+            }
+            
+            // CTM parameters
+            if (ld["CTM"]) {
+                auto ctm = ld["CTM"];
+                if (ctm["T"]) config.levelDensity.T = ctm["T"].as<double>();
+                if (ctm["E0"]) config.levelDensity.E0 = ctm["E0"].as<double>();
+            }
+            
+            // TABLE parameters
+            if (ld["TABLE"] && ld["TABLE"]["file"]) {
+                config.levelDensity.tableFile = ld["TABLE"]["file"].as<std::string>();
+            }
+        }
+        
+        // =================================================================
+        // SPIN CUTOFF SECTION
+        // =================================================================
+        if (yaml["spinCutoff"]) {
+            auto sc = yaml["spinCutoff"];
+            
+            // Model selection
+            if (sc["model"]) {
+                std::string model = sc["model"].as<std::string>();
+                if (model == "VON_EGIDY_05") 
+                    config.spinCutoff.model = Config::SpinCutoffConfig::Model::VON_EGIDY_05;
+                else if (model == "VON_EGIDY_09") 
+                    config.spinCutoff.model = Config::SpinCutoffConfig::Model::VON_EGIDY_09;
+                else if (model == "TALYS") 
+                    config.spinCutoff.model = Config::SpinCutoffConfig::Model::TALYS;
+                else if (model == "SINGLE_PARTICLE") 
+                    config.spinCutoff.model = Config::SpinCutoffConfig::Model::SINGLE_PARTICLE;
+                else if (model == "RIGID_SPHERE") 
+                    config.spinCutoff.model = Config::SpinCutoffConfig::Model::RIGID_SPHERE;
+            }
+            
+            // TALYS parameters
+            if (sc["TALYS"]) {
+                auto talys = sc["TALYS"];
+                if (talys["spinCutoffD"]) 
+                    config.spinCutoff.spinCutoffD = talys["spinCutoffD"].as<double>();
+                if (talys["Ed"]) 
+                    config.spinCutoff.Ed = talys["Ed"].as<double>();
+            }
+        }
+        
+        // =================================================================
+        // GAMMA STRENGTH SECTION
+        // =================================================================
+        if (yaml["gammaStrength"]) {
+            auto gs = yaml["gammaStrength"];
+            
+            // E1 model selection
+            if (gs["e1Model"]) {
+                std::string model = gs["e1Model"].as<std::string>();
+                if (model == "GEN_LORENTZ") 
+                    config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::GEN_LORENTZ;
+                else if (model == "EGLO") 
+                    config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::EGLO;
+                else if (model == "KMF") 
+                    config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::KMF;
+                else if (model == "KOP_CHRIEN") 
+                    config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::KOP_CHRIEN;
+                else if (model == "STD_LORENTZ") 
+                    config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::STD_LORENTZ;
+            }
+            
+            // E1 resonances
+            if (gs["e1Resonances"]) {
+                config.gammaStrength.e1Resonances.clear();
+                for (const auto& res : gs["e1Resonances"]) {
+                    Config::GammaStrengthConfig::E1Resonance r;
+                    r.energy = res["energy"].as<double>();
+                    r.width = res["width"].as<double>();
+                    r.sigma = res["sigma"].as<double>();
+                    config.gammaStrength.e1Resonances.push_back(r);
+                }
+            }
+            
+            if (gs["e1_constantT"]) 
+                config.gammaStrength.e1ConstantT = gs["e1_constantT"].as<double>();
+            
+            // M1 model selection
+            if (gs["m1Model"]) {
+                std::string model = gs["m1Model"].as<std::string>();
+                if (model == "STD_LORENTZ") 
+                    config.gammaStrength.m1Model = Config::GammaStrengthConfig::M1Model::STD_LORENTZ;
+                else if (model == "SINGLE_PARTICLE") 
+                    config.gammaStrength.m1Model = Config::GammaStrengthConfig::M1Model::SINGLE_PARTICLE;
+            }
+            
+            // M1 resonances
+            if (gs["m1Resonances"]) {
+                config.gammaStrength.m1Resonances.clear();
+                for (const auto& res : gs["m1Resonances"]) {
+                    Config::GammaStrengthConfig::M1Resonance r;
+                    r.energy = res["energy"].as<double>();
+                    r.width = res["width"].as<double>();
+                    r.sigma = res["sigma"].as<double>();
+                    config.gammaStrength.m1Resonances.push_back(r);
+                }
+            }
+            
+            // E2 model selection
+            if (gs["e2Model"]) {
+                std::string model = gs["e2Model"].as<std::string>();
+                if (model == "STD_LORENTZ") 
+                    config.gammaStrength.e2Model = Config::GammaStrengthConfig::E2Model::STD_LORENTZ;
+                else if (model == "SINGLE_PARTICLE") 
+                    config.gammaStrength.e2Model = Config::GammaStrengthConfig::E2Model::SINGLE_PARTICLE;
+            }
+            
+            if (gs["e2Energy"]) config.gammaStrength.e2Energy = gs["e2Energy"].as<double>();
+            if (gs["e2Width"]) config.gammaStrength.e2Width = gs["e2Width"].as<double>();
+            if (gs["e2Sigma"]) config.gammaStrength.e2Sigma = gs["e2Sigma"].as<double>();
+        }
+        
+        // =================================================================
+        // PARITY MODEL SECTION
+        // =================================================================
+        if (yaml["parityModel"]) {
+            auto pm = yaml["parityModel"];
+            
+            // Model selection
+            if (pm["model"]) {
+                std::string model = pm["model"].as<std::string>();
+                if (model == "EQUIPARTITION") 
+                    config.parity.model = Config::ParityConfig::Model::EQUIPARTITION;
+                else if (model == "ENERGY_DEPENDENT") 
+                    config.parity.model = Config::ParityConfig::Model::ENERGY_DEPENDENT;
+            }
+            
+            // Energy-dependent parameters
+            if (pm["ENERGY_DEPENDENT"]) {
+                auto ed = pm["ENERGY_DEPENDENT"];
+                if (ed["parC"]) config.parity.parC = ed["parC"].as<double>();
+                if (ed["parD"]) config.parity.parD = ed["parD"].as<double>();
+            }
+        }
+        
+        // =================================================================
+        // CONTINUUM SECTION
+        // =================================================================
+        if (yaml["continuum"]) {
+            auto cont = yaml["continuum"];
+            
+            // Distribution selection
+            if (cont["distribution"]) {
+                std::string dist = cont["distribution"].as<std::string>();
+                if (dist == "POISSON") 
+                    config.continuum.distribution = Config::ContinuumConfig::Distribution::POISSON;
+                else if (dist == "WIGNER") 
+                    config.continuum.distribution = Config::ContinuumConfig::Distribution::WIGNER;
+            }
+            
+            if (cont["energySpacing"]) 
+                config.continuum.energySpacing = cont["energySpacing"].as<double>();
+            if (cont["forceBinNumber"]) 
+                config.continuum.forceBinNumber = cont["forceBinNumber"].as<bool>();
+            if (cont["numBins"]) 
+                config.continuum.numBins = cont["numBins"].as<int>();
+            if (cont["maxDiscreteLevel"]) 
+                config.continuum.maxDiscreteLevel = cont["maxDiscreteLevel"].as<int>();
+        }
+        
+        // =================================================================
+        // INTERNAL CONVERSION SECTION
+        // =================================================================
+        if (yaml["internalConversion"]) {
+            auto ic = yaml["internalConversion"];
+            
+            if (ic["enabled"]) 
+                config.internalConversion.enabled = ic["enabled"].as<bool>();
+            
+            // Model selection
+            if (ic["model"]) {
+                std::string model = ic["model"].as<std::string>();
+                if (model == "BRICC") 
+                    config.internalConversion.model = Config::InternalConversionConfig::Model::BRICC;
+                else if (model == "TABLE") 
+                    config.internalConversion.model = Config::InternalConversionConfig::Model::TABLE;
+            }
+            
+            if (ic["briccModel"]) 
+                config.internalConversion.briccModel = ic["briccModel"].as<std::string>();
+        }
+        
+        // =================================================================
+        // SIMULATION SECTION
+        // =================================================================
+        if (yaml["simulation"]) {
+            auto sim = yaml["simulation"];
+            
+            if (sim["numRealizations"]) 
+                config.simulation.numRealizations = sim["numRealizations"].as<int>();
+            if (sim["eventsPerRealization"]) 
+                config.simulation.eventsPerRealization = sim["eventsPerRealization"].as<int>();
+            if (sim["updateInterval"]) 
+                config.simulation.updateInterval = sim["updateInterval"].as<int>();
+            if (sim["saveInterval"]) 
+                config.simulation.saveInterval = sim["saveInterval"].as<int>();
+            if (sim["useParallel"]) 
+                config.simulation.useParallel = sim["useParallel"].as<bool>();
+            if (sim["randomSeed"]) 
+                config.simulation.randomSeed = sim["randomSeed"].as<int>();
+        }
+        
+        // =================================================================
+        // OUTPUT SECTION
+        // =================================================================
+        if (yaml["output"]) {
+            auto out = yaml["output"];
+            
+            if (out["outputFile"]) 
+                config.output.outputFile = out["outputFile"].as<std::string>();
+            if (out["paramFile"]) 
+                config.output.paramFile = out["paramFile"].as<std::string>();
+            if (out["saveTree"]) 
+                config.output.saveTree = out["saveTree"].as<bool>();
+            if (out["saveLevelPopulations"]) 
+                config.output.saveLevelPopulations = out["saveLevelPopulations"].as<bool>();
+            if (out["gammaSpectrumBins"]) 
+                config.output.gammaSpectrumBins = out["gammaSpectrumBins"].as<int>();
+            if (out["maxGammaEnergy"]) 
+                config.output.maxGammaEnergy = out["maxGammaEnergy"].as<double>();
+            if (out["maxPlotSpin"]) 
+                config.output.maxPlotSpin = out["maxPlotSpin"].as<double>();
+        }
+        
+        std::cout << "Configuration loaded successfully." << std::endl;
+        
+        // Validate configuration
+        std::string errorMsg;
+        if (!config.validate(errorMsg)) {
+            throw std::runtime_error("Configuration validation failed: " + errorMsg);
+        }
+        
+        return config;
+        
+    } catch (const YAML::Exception& e) {
+        std::cerr << "YAML parsing error: " << e.what() << std::endl;
+        std::cerr << "Using default configuration.\n";
+        return createDefault(60, 144);
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading configuration: " << e.what() << std::endl;
         std::cerr << "Using default configuration.\n";
         return createDefault(60, 144);
     }
-    
-    std::cout << "Loading configuration from: " << filename << std::endl;
-    
-    std::string line;
-    std::string currentSection;
-    
-    while (std::getline(file, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#' || line[0] == '/' || line == "{" || line == "}") continue;
-        
-        // Check for section headers
-        if (line.find("nucleus") != std::string::npos && line.find(":") != std::string::npos) {
-            currentSection = "nucleus";
-            continue;
-        }
-        if (line.find("levelDensity") != std::string::npos) {
-            currentSection = "levelDensity";
-            continue;
-        }
-        if (line.find("spinCutoff") != std::string::npos) {
-            currentSection = "spinCutoff";
-            continue;
-        }
-        if (line.find("gammaStrength") != std::string::npos) {
-            currentSection = "gammaStrength";
-            continue;
-        }
-        if (line.find("initialExcitation") != std::string::npos) {
-            currentSection = "initialExcitation";
-            continue;
-        }
-        if (line.find("simulation") != std::string::npos) {
-            currentSection = "simulation";
-            continue;
-        }
-        if (line.find("output") != std::string::npos) {
-            currentSection = "output";
-            continue;
-        }
-        if (line.find("continuum") != std::string::npos) {
-            currentSection = "continuum";
-            continue;
-        }
-        if (line.find("internalConversion") != std::string::npos) {
-            currentSection = "internalConversion";
-            continue;
-        }
-        if (line.find("parityModel") != std::string::npos) {
-            currentSection = "parityModel";
-            continue;
-        }
-        
-        auto [key, value] = parseLine(line);
-        if (key.empty()) continue;
-        
-        try {
-            // Nucleus section
-            if (currentSection == "nucleus") {
-                if (key == "Z") config.nucleus.Z = std::stoi(value);
-                else if (key == "A") config.nucleus.A = std::stoi(value);
-                else if (key == "Sn") config.nucleus.Sn = std::stod(value);
-                else if (key == "levelsFile") config.nucleus.levelsFile = value;
-            }
-            // Level Density section
-            else if (currentSection == "levelDensity") {
-                if (key == "model") {
-                    if (value == "BSFG") config.levelDensity.model = Config::LevelDensityConfig::Model::BSFG;
-                    else if (value == "CTM") config.levelDensity.model = Config::LevelDensityConfig::Model::CTM;
-                    else if (value == "TABLE") config.levelDensity.model = Config::LevelDensityConfig::Model::TABLE;
-                    else if (value == "USER_DEFINED") config.levelDensity.model = Config::LevelDensityConfig::Model::USER_DEFINED;
-                }
-                else if (key == "a") config.levelDensity.a = std::stod(value);
-                else if (key == "E1") config.levelDensity.E1 = std::stod(value);
-                else if (key == "T") config.levelDensity.T = std::stod(value);
-                else if (key == "E0") config.levelDensity.E0 = std::stod(value);
-                else if (key == "useEnergyDependentA") config.levelDensity.useEnergyDependentA = (value == "true");
-                else if (key == "tableFile") config.levelDensity.tableFile = value;
-            }
-            // Spin Cutoff section
-            else if (currentSection == "spinCutoff") {
-                if (key == "model") {
-                    if (value == "VON_EGIDY_05") config.spinCutoff.model = Config::SpinCutoffConfig::Model::VON_EGIDY_05;
-                    else if (value == "TALYS") config.spinCutoff.model = Config::SpinCutoffConfig::Model::TALYS;
-                    else if (value == "SINGLE_PARTICLE") config.spinCutoff.model = Config::SpinCutoffConfig::Model::SINGLE_PARTICLE;
-                }
-                else if (key == "spinCutoffD") config.spinCutoff.spinCutoffD = std::stod(value);
-            }
-            // Gamma Strength section
-            else if (currentSection == "gammaStrength") {
-                if (key == "e1Model") {
-                    if (value == "GEN_LORENTZ") config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::GEN_LORENTZ;
-					else if (value == "EGLO") config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::EGLO;
-                    else if (value == "KMF") config.gammaStrength.e1Model = Config::GammaStrengthConfig::E1Model::KMF;
-                }
-            }
-            // Initial Excitation section
-            
-            else if (currentSection == "initialExcitation") {
-
-                if (key == "mode") {
-                    
-                    if (value == "SINGLE") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SINGLE;
-                    else if (value == "SELECT") {
-                        config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SELECT;
-                    }
-                    else if (value == "SPREAD") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::SPREAD;
-                    else if (value == "FULL_REACTION") config.initialExcitation.mode = Config::InitialExcitationConfig::Mode::FULL_REACTION;
-                }
-
-                else if (key == "SINGLE_excitationEnergy")
-                    config.initialExcitation.excitationEnergy = std::stod(value);
-           
-                else if (key == "SINGLE_spin") config.initialExcitation.spin = std::stod(value);
-                else if (key == "SINGLE_parity")
-                    config.initialExcitation.parity = std::stoi(value);
-
-
-                // SELECT mode parameters - Simple one-line-per-state format!
-                else if ( (key == "SELECT_numStates") && (config.initialExcitation.mode == Config::InitialExcitationConfig::Mode::SELECT) ) {
-                    int numStates = std::stoi(value);
-                    config.initialExcitation.selectStates.resize(numStates);
-                    std::cout << "SELECT mode: expecting " << numStates << " states" << std::endl;
-                }
-                else if ( (key.find("SELECT_state_") == 0)  && (config.initialExcitation.mode == Config::InitialExcitationConfig::Mode::SELECT) ) {
-                    // Extract state number from key (e.g., "SELECT_state_1" -> 1)
-                    int stateNum = std::stoi(key.substr(13)); // Skip "SELECT_state_"
-                    
-                    if (stateNum > 0 && stateNum <= static_cast<int>(config.initialExcitation.selectStates.size())) {
-                        // Parse the space-separated values: "energy spin parity branchingRatio"
-                        std::istringstream iss(value);
-                        double energy, spin, branchingRatio;
-                        int parity;
-                        
-                        if (iss >> energy >> spin >> parity >> branchingRatio) {
-                            config.initialExcitation.selectStates[stateNum - 1].energy = energy;
-                            config.initialExcitation.selectStates[stateNum - 1].spin = spin;
-                            config.initialExcitation.selectStates[stateNum - 1].parity = parity;
-                            config.initialExcitation.selectStates[stateNum - 1].branchingRatio = branchingRatio;
-                            std::cout << "  Parsed SELECT state " << stateNum << ": "
-                                << "E=" << energy << " MeV, J=" << spin << ", "
-                                << "π=" << (parity == 1 ? "+" : "-") << ", BR=" << branchingRatio << std::endl;
-                        } else {
-                            std::cerr << "Error parsing SELECT_state_" << stateNum
-                            << ": invalid format '" << value << "'" << std::endl;
-                            std::cerr << "Expected format: 'energy spin parity branchingRatio'" << std::endl;
-                        }
-                    } else {
-                        std::cerr << "Warning: SELECT_state_" << stateNum
-                        << " is out of range (numStates="
-                        << config.initialExcitation.selectStates.size() << ")" << std::endl;
-                    }
-                }
-                
-                else if (key == "SPREAD_meanEnergy") config.initialExcitation.meanEnergy = std::stod(value);
-                else if (key == "SPREAD_energySpread") config.initialExcitation.energySpread = std::stod(value);
-                
-            }
-            
-            // Simulation section
-            else if (currentSection == "simulation") {
-                if (key == "numRealizations") config.simulation.numRealizations = std::stoi(value);
-                else if (key == "eventsPerRealization") config.simulation.eventsPerRealization = std::stoi(value);
-                else if (key == "randomSeed") config.simulation.randomSeed = std::stoul(value);
-                else if (key == "useParallel") config.simulation.useParallel = (value == "true");
-            }
-            // Output section
-            else if (currentSection == "output") {
-                if (key == "outputFile") config.output.outputFile = value;
-                else if (key == "paramFile") config.output.paramFile = value;
-                else if (key == "saveTree") config.output.saveTree = (value == "true");
-                else if (key == "gammaSpectrumBins") config.output.gammaSpectrumBins = std::stoi(value);
-                else if (key == "maxGammaEnergy") config.output.maxGammaEnergy = std::stod(value);
-                else if (key == "maxPlotSpin") config.output.maxPlotSpin = std::stod(value);
-
-            }
-            // Continuum section
-            else if (currentSection == "continuum") {
-                if (key == "energySpacing") config.continuum.energySpacing = std::stod(value);
-                else if (key == "distribution") {
-                    if (value == "POISSON") config.continuum.distribution = Config::ContinuumConfig::Distribution::POISSON;
-                    else if (value == "WIGNER") config.continuum.distribution = Config::ContinuumConfig::Distribution::WIGNER;
-                }
-            }
-            // Internal Conversion section
-            else if (currentSection == "internalConversion") {
-                if (key == "enabled") config.internalConversion.enabled = (value == "true");
-                else if (key == "model") {
-                    if (value == "BRICC") config.internalConversion.model = Config::InternalConversionConfig::Model::BRICC;
-                    else if (value == "TABLE") config.internalConversion.model = Config::InternalConversionConfig::Model::TABLE;
-                }
-            }
-            // Parity section
-            else if (currentSection == "parityModel") {
-                if (key == "model") {
-                    if (value == "EQUIPARTITION") config.parity.model = Config::ParityConfig::Model::EQUIPARTITION;
-                    else if (value == "ENERGY_DEPENDENT") config.parity.model = Config::ParityConfig::Model::ENERGY_DEPENDENT;
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Warning: Error parsing config line: " << line << std::endl;
-            std::cerr << "  Error: " << e.what() << std::endl;
-        }
-    }
-    
-    file.close();
-    
-    std::string errorMsg;
-    if (!config.validate(errorMsg)) {
-        std::cerr << "Configuration validation failed: " << errorMsg << std::endl;
-        throw std::runtime_error("Invalid configuration");
-    }
-    
-    std::cout << "Configuration loaded successfully." << std::endl;
-    return config;
 }
 
 void Config::saveToFile(const std::string& filename) const {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not create config file: " << filename << std::endl;
-        return;
-    }
+    YAML::Emitter out;
+    out << YAML::BeginMap;
     
-    file << "{\n";
-    file << "  \"nucleus\": {\n";
-    file << "    \"Z\": " << nucleus.Z << ",\n";
-    file << "    \"A\": " << nucleus.A << ",\n";
-    file << "    \"Sn\": " << nucleus.Sn << ",\n";
-    file << "    \"levelsFile\": \"" << nucleus.levelsFile << "\"\n";
-    file << "  },\n";
+    // Nucleus section
+    out << YAML::Key << "nucleus";
+    out << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Z" << YAML::Value << nucleus.Z;
+    out << YAML::Key << "A" << YAML::Value << nucleus.A;
+    out << YAML::Key << "Sn" << YAML::Value << nucleus.Sn;
+    out << YAML::Key << "levelsFile" << YAML::Value << nucleus.levelsFile;
+    out << YAML::EndMap;
     
-    file << "  \"levelDensity\": {\n";
-    file << "    \"model\": \"";
-    switch(levelDensity.model) {
-        case LevelDensityConfig::Model::BSFG: file << "BSFG"; break;
-        case LevelDensityConfig::Model::CTM: file << "CTM"; break;
-        case LevelDensityConfig::Model::TABLE: file << "TABLE"; break;
-        case LevelDensityConfig::Model::USER_DEFINED: file << "USER_DEFINED"; break;
-    }
-    file << "\",\n";
-    file << "    \"a\": " << levelDensity.a << ",\n";
-    file << "    \"E1\": " << levelDensity.E1 << "\n";
-    file << "  },\n";
+    // Initial excitation section
+    out << YAML::Key << "initialExcitation";
+    out << YAML::Value << YAML::BeginMap;
     
-    file << "  \"initialExcitation\": {\n";
-    file << "    \"mode\": \"";
+    std::string modeStr;
     switch(initialExcitation.mode) {
-        case InitialExcitationConfig::Mode::SINGLE: file << "SINGLE"; break;
-        case InitialExcitationConfig::Mode::SELECT: file << "SELECT"; break;
-        case InitialExcitationConfig::Mode::SPREAD: file << "SPREAD"; break;
-        case InitialExcitationConfig::Mode::FULL_REACTION: file << "FULL_REACTION"; break;
+        case InitialExcitationConfig::Mode::SINGLE: modeStr = "SINGLE"; break;
+        case InitialExcitationConfig::Mode::SELECT: modeStr = "SELECT"; break;
+        case InitialExcitationConfig::Mode::SPREAD: modeStr = "SPREAD"; break;
+        case InitialExcitationConfig::Mode::FULL_REACTION: modeStr = "FULL_REACTION"; break;
     }
-    file << "\",\n";
-    file << "    \"excitationEnergy\": " << initialExcitation.excitationEnergy << ",\n";
-    file << "    \"spin\": " << initialExcitation.spin << ",\n";
-    file << "    \"parity\": " << initialExcitation.parity << "\n";
-    file << "  },\n";
+    out << YAML::Key << "mode" << YAML::Value << modeStr;
     
-    file << "  \"simulation\": {\n";
-    file << "    \"numRealizations\": " << simulation.numRealizations << ",\n";
-    file << "    \"eventsPerRealization\": " << simulation.eventsPerRealization << "\n";
-    file << "  },\n";
+    // Add other sections as needed...
+    out << YAML::EndMap;
     
-    file << "  \"output\": {\n";
-    file << "    \"outputFile\": \"" << output.outputFile << "\",\n";
-    file << "    \"gammaSpectrumBins\": " << output.gammaSpectrumBins << "\n";
-    file << "  }\n";
-    file << "}\n";
+    out << YAML::EndMap;
     
-    file.close();
+    std::ofstream fout(filename);
+    fout << out.c_str();
+    fout.close();
+    
+    std::cout << "Configuration saved to: " << filename << std::endl;
 }
 
 Config Config::createDefault(int Z, int A) {
@@ -320,109 +412,90 @@ Config Config::createDefault(int Z, int A) {
     config.nucleus.Z = Z;
     config.nucleus.A = A;
     config.nucleus.Sn = 7.0;
-    config.simulation.numRealizations = 1;
-    config.simulation.eventsPerRealization = 100;
+    
+    // Set reasonable defaults for other parameters
+    config.levelDensity.a = 15.0;
+    config.levelDensity.E1 = 1.0;
+    
+    config.initialExcitation.excitationEnergy = 7.0;
+    config.initialExcitation.spin = 0.5;
+    config.initialExcitation.parity = 1;
+    
     return config;
 }
 
-bool Config::validate(std::string& errorMessage) const {
-    if (nucleus.Z <= 0 || nucleus.A <= 0) {
-        errorMessage = "Invalid Z or A";
+bool Config::validate(std::string& errorMsg) const {
+    // Check nucleus parameters
+    if (nucleus.Z <= 0 || nucleus.Z > 120) {
+        errorMsg = "Invalid Z (must be 1-120): " + std::to_string(nucleus.Z);
         return false;
     }
+    
+    if (nucleus.A <= nucleus.Z || nucleus.A > 300) {
+        errorMsg = "Invalid A (must be > Z and < 300): " + std::to_string(nucleus.A);
+        return false;
+    }
+    
+    if (nucleus.Sn < 0.0) {
+        errorMsg = "Negative neutron separation energy";
+        return false;
+    }
+    
+    // Check simulation parameters
     if (simulation.numRealizations <= 0) {
-        errorMessage = "Number of realizations must be positive";
+        errorMsg = "Number of realizations must be positive";
         return false;
     }
+    
     if (simulation.eventsPerRealization <= 0) {
-        errorMessage = "Events per realization must be positive";
+        errorMsg = "Events per realization must be positive";
         return false;
     }
+    
+    // Check SELECT mode branching ratios
+    if (initialExcitation.mode == InitialExcitationConfig::Mode::SELECT) {
+        double sum = 0.0;
+        for (const auto& state : initialExcitation.selectStates) {
+            sum += state.branchingRatio;
+        }
+        if (std::abs(sum - 1.0) > 1e-6) {
+            errorMsg = "SELECT mode branching ratios must sum to 1.0 (sum = " + 
+                      std::to_string(sum) + ")";
+            return false;
+        }
+    }
+    
     return true;
 }
 
 void Config::print() const {
-    std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
-    std::cout << "║          RAINIER++ Configuration Summary              ║\n";
-    std::cout << "╚════════════════════════════════════════════════════════╝\n\n";
+    std::cout << "\n=== RAINIER++ Configuration ===\n";
+    std::cout << "Nucleus: Z=" << nucleus.Z << " A=" << nucleus.A 
+              << " Sn=" << nucleus.Sn << " MeV\n";
+    std::cout << "Levels file: " << nucleus.levelsFile << "\n";
     
-    std::cout << "Nucleus:\n";
-    std::cout << "  Z = " << nucleus.Z << ", A = " << nucleus.A << "\n";
-    std::cout << "  Sn = " << nucleus.Sn << " MeV\n";
-    std::cout << "  Levels file: " << nucleus.levelsFile << "\n\n";
-    
-    std::cout << "Level Density Model: ";
-    switch(levelDensity.model) {
-        case LevelDensityConfig::Model::BSFG: 
-            std::cout << "Back-Shifted Fermi Gas\n";
-            std::cout << "  a = " << levelDensity.a << " MeV^-1\n";
-            std::cout << "  E1 = " << levelDensity.E1 << " MeV\n";
-            break;
-        case LevelDensityConfig::Model::CTM:
-            std::cout << "Constant Temperature Model\n";
-            std::cout << "  T = " << levelDensity.T << " MeV\n";
-            break;
-        case LevelDensityConfig::Model::TABLE:
-            std::cout << "Table-based\n";
-            break;
-        case LevelDensityConfig::Model::USER_DEFINED:
-            std::cout << "User-defined\n";
-            break;
-    }
-    std::cout << "\n";
-    
-    std::cout << "Spin Cutoff Model: ";
-    switch(spinCutoff.model) {
-        case SpinCutoffConfig::Model::VON_EGIDY_05: std::cout << "Von Egidy 2005\n"; break;
-        case SpinCutoffConfig::Model::TALYS: std::cout << "TALYS\n"; break;
-        case SpinCutoffConfig::Model::SINGLE_PARTICLE: std::cout << "Single Particle\n"; break;
-        default: std::cout << "Other\n"; break;
-    }
-    std::cout << "\n";
-    
-    std::cout << "Initial Excitation Mode: ";
+    std::cout << "\nInitial Excitation Mode: ";
     switch(initialExcitation.mode) {
-        case InitialExcitationConfig::Mode::SINGLE:
-            std::cout << "SINGLE (DICEBOX-like)\n";
-            std::cout << "  E = " << initialExcitation.excitationEnergy << " MeV\n";
-            std::cout << "  J = " << initialExcitation.spin << "\n";
-            std::cout << "  π = " << (initialExcitation.parity == 1 ? "+" : "-") << "\n";
+        case InitialExcitationConfig::Mode::SINGLE: 
+            std::cout << "SINGLE (E=" << initialExcitation.excitationEnergy 
+                     << " MeV, J=" << initialExcitation.spin << ")\n";
             break;
-        case InitialExcitationConfig::Mode::SELECT:
-            std::cout << "SELECT (Beta-decay-like)\n";
-            std::cout << "  Number of states: " << initialExcitation.selectStates.size() << "\n";
-            for (size_t i = 0; i < initialExcitation.selectStates.size(); ++i) {
-                const auto& state = initialExcitation.selectStates[i];
-                std::cout << "    State " << i+1 << ": "
-                          << "E=" << state.energy << " MeV, "
-                          << "J=" << state.spin << ", "
-                          << "π=" << (state.parity == 1 ? "+" : "-") << ", "
-                          << "BR=" << state.branchingRatio << "\n";
-            }
+        case InitialExcitationConfig::Mode::SELECT: 
+            std::cout << "SELECT (" << initialExcitation.selectStates.size() << " states)\n";
             break;
         case InitialExcitationConfig::Mode::SPREAD:
-            std::cout << "SPREAD (Energy spread with spin distribution)\n";
-            std::cout << "  Mean E = " << initialExcitation.meanEnergy << " MeV\n";
-            std::cout << "  Spread = " << initialExcitation.energySpread << " MeV\n";
+            std::cout << "SPREAD (mean=" << initialExcitation.meanEnergy
+                     << " MeV, width=" << initialExcitation.energySpread << " MeV)\n";
             break;
-        case InitialExcitationConfig::Mode::FULL_REACTION:
-            std::cout << "FULL_REACTION (TALYS population)\n";
+        case InitialExcitationConfig::Mode::FULL_REACTION: 
+            std::cout << "FULL_REACTION\n";
             break;
     }
-    std::cout << "\n";
     
-    std::cout << "Simulation:\n";
-    std::cout << "  Realizations: " << simulation.numRealizations << "\n";
-    std::cout << "  Events per realization: " << simulation.eventsPerRealization << "\n";
-    std::cout << "  Random seed: " << simulation.randomSeed << "\n";
-    std::cout << "  Parallel: " << (simulation.useParallel ? "Yes" : "No") << "\n\n";
-    
-    std::cout << "Output:\n";
-    std::cout << "  File: " << output.outputFile << "\n";
-    std::cout << "  Save tree: " << (output.saveTree ? "Yes" : "No") << "\n";
-    std::cout << "  Gamma spectrum bins: " << output.gammaSpectrumBins << "\n\n";
-    
-    std::cout << "Internal Conversion: " << (internalConversion.enabled ? "Enabled" : "Disabled") << "\n\n";
+    std::cout << "\nSimulation: " << simulation.numRealizations << " realizations, "
+              << simulation.eventsPerRealization << " events each\n";
+    std::cout << "Output: " << output.outputFile << "\n";
+    std::cout << "===============================\n\n";
 }
 
 } // namespace rainier

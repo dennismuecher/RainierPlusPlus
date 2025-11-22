@@ -9,6 +9,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(ROOT REQUIRED COMPONENTS Core Hist Tree RIO Graf MathCore)
 include(${ROOT_USE_FILE})
 
+# Find yaml-cpp (required for YAML configuration support)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
+
 # OpenMP support (optional)
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
@@ -20,9 +24,10 @@ endif()
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${ROOT_INCLUDE_DIRS}
+    ${YAML_CPP_INCLUDE_DIRS}
 )
 
-# Source files - NOW INCLUDING PRIORITY 3 FILES
+# Source files
 set(SOURCES
     src/Config.cpp
     src/core/Level.cpp
@@ -56,11 +61,20 @@ set(HEADERS
 
 # Create library
 add_library(rainier_lib STATIC ${SOURCES} ${HEADERS})
-target_link_libraries(rainier_lib ${ROOT_LIBRARIES})
+target_link_libraries(rainier_lib
+    ${ROOT_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
+)
+target_link_directories(rainier_lib PUBLIC ${YAML_CPP_LIBRARY_DIRS})
 
 # Main executable
 add_executable(rainier src/main.cpp)
-target_link_libraries(rainier rainier_lib ${ROOT_LIBRARIES})
+target_link_libraries(rainier
+    rainier_lib
+    ${ROOT_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
+)
+target_link_directories(rainier PUBLIC ${YAML_CPP_LIBRARY_DIRS})
 
 # Compiler warnings
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -74,9 +88,16 @@ install(DIRECTORY include/ DESTINATION include/rainier)
 
 # Print configuration summary
 message(STATUS "")
-message(STATUS "RAINIER 2.0 Configuration:")
+message(STATUS "====================================")
+message(STATUS "RAINIER++ 2.0 Configuration Summary")
+message(STATUS "====================================")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  ROOT version: ${ROOT_VERSION}")
+message(STATUS "  YAML-CPP: ${YAML_CPP_LIBRARIES}")
 message(STATUS "  Install prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "")
+if(OpenMP_CXX_FOUND)
+    message(STATUS "  OpenMP: Enabled")
+else()
+    message(STATUS "  OpenMP: Disabled")
+endif()

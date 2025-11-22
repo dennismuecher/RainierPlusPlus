@@ -112,7 +112,7 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
     for (const auto& r : config.gammaStrength.e1Resonances) {
         e1Resonances.push_back({r.energy, r.width, r.sigma});
     }
-    auto e1 = std::make_unique<E1GenLorentz>(e1Resonances, config.gammaStrength.constantT);
+    auto e1 = std::make_unique<E1GenLorentz>(e1Resonances, config.gammaStrength.e1ConstantT);
     
     std::vector<Resonance> m1Resonances;
     for (const auto& r : config.gammaStrength.m1Resonances) {

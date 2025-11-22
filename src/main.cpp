@@ -1,34 +1,60 @@
-// main.cpp - Fixed version with discrete level loading
+// main.cpp - RAINIER++ main entry point with YAML config support
 #include "Config.h"
 #include "core/Nucleus.h"
 #include "simulation/DecaySimulator.h"
 #include "io/OutputManager.h"
 #include <iostream>
-#include <exception>
+#include <string>
+#include <stdexcept>
 
 using namespace rainier;
 
-void printHeader() {
+void printBanner() {
     std::cout << "\n";
     std::cout << "╔════════════════════════════════════════════════════════╗\n";
-    std::cout << "║                                                        ║\n";
     std::cout << "║   RAINIER++ - Modern C++ Edition                      ║\n";
+    std::cout << "║   Nuclear Decay Cascade Monte Carlo Simulation        ║\n";
     std::cout << "║                                                        ║\n";
-    std::cout << "║   Randomizer of Assorted Initial Nuclear              ║\n";
-    std::cout << "║   Intensities and Emissions of Radiation              ║\n";
-    std::cout << "║                                                        ║\n";
+    std::cout << "║   Now with YAML configuration support!                ║\n";
     std::cout << "╚════════════════════════════════════════════════════════╝\n";
     std::cout << "\n";
 }
 
-int main(int argc, char* argv[]) {
+void printUsage(const char* programName) {
+    std::cout << "Usage: " << programName << " [config_file]\n";
+    std::cout << "\n";
+    std::cout << "Arguments:\n";
+    std::cout << "  config_file  Path to YAML configuration file\n";
+    std::cout << "               (default: config/example.yaml)\n";
+    std::cout << "\n";
+    std::cout << "Examples:\n";
+    std::cout << "  " << programName << "                      # Use default config\n";
+    std::cout << "  " << programName << " my_config.yaml      # Use custom config\n";
+    std::cout << "  " << programName << " ../config/test.yaml # Use config from parent dir\n";
+    std::cout << "\n";
+    std::cout << "Note: YAML format provides:\n";
+    std::cout << "  - Native comment support with #\n";
+    std::cout << "  - Cleaner, more readable syntax\n";
+    std::cout << "  - Better organization of parameters\n";
+    std::cout << "\n";
+}
+
+int main(int argc, char** argv) {
+    printBanner();
+    
+    // Determine config file
+    std::string configFile = "../config/example.yaml";
+    if (argc > 1) {
+        if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
+            printUsage(argv[0]);
+            return 0;
+        }
+        configFile = argv[1];
+    }
+    
     try {
-        printHeader();
-        
         // Load configuration
-        std::string configFile = (argc > 1) ? argv[1] : "config.dat";
-        std::cout << "═══ Loading Configuration ═══\n";
-        std::cout << "Configuration from: " << configFile << "\n";
+        std::cout << "Loading configuration from: " << configFile << "\n";
         Config config = Config::loadFromFile(configFile);
         config.print();
         
@@ -62,50 +88,53 @@ int main(int argc, char* argv[]) {
                          << " MeV, J=" << config.initialExcitation.spin << ")\n";
                 break;
             case Config::InitialExcitationConfig::Mode::SELECT:
-                std::cout << "SELECT (Beta-decay-like)\n";
+                std::cout << "SELECT (Beta-decay-like with " 
+                         << config.initialExcitation.selectStates.size() << " states)\n";
                 break;
             case Config::InitialExcitationConfig::Mode::SPREAD:
-                std::cout << "SPREAD (E=" << config.initialExcitation.meanEnergy 
+                std::cout << "SPREAD (E=" << config.initialExcitation.meanEnergy
                          << " ± " << config.initialExcitation.energySpread << " MeV)\n";
                 break;
             case Config::InitialExcitationConfig::Mode::FULL_REACTION:
-                std::cout << "FULL_REACTION (TALYS population)\n";
+                std::cout << "FULL_REACTION (from " 
+                         << config.initialExcitation.populationFile << ")\n";
                 break;
         }
-
-        for (int real = 0; real < config.simulation.numRealizations; ++real) {
-            std::cout << "Realization " << real + 1 << " / " 
-                      << config.simulation.numRealizations << "\n";
-
-            nucleus.buildContinuumLevels(config, real);
-            outputMgr.fillLevelSpectra(real, nucleus);
+        
+        std::cout << "\nRealizations: " << config.simulation.numRealizations << "\n";
+        std::cout << "Events per realization: " << config.simulation.eventsPerRealization << "\n";
+        
+        // Run all realizations
+        for (int i = 0; i < config.simulation.numRealizations; ++i) {
+            std::cout << "\n─── Realization " << (i+1) << "/" 
+                     << config.simulation.numRealizations << " ───\n";
             
-            DecaySimulator simulator(nucleus, config, real);
-
+            // Build continuum levels for this realization
+            nucleus.buildContinuumLevels(config, i);
+            
+            // Create simulator with realization number
+            DecaySimulator simulator(nucleus, config, i);
+                        
+            // Run simulation
             simulator.run();
-
-            outputMgr.saveRealization(real, simulator);
-            std::cout << "  Completed.\n\n";
+                        
+            // Save output
+            outputMgr.saveRealization(i, simulator);
+         
         }
         
         // Finalize output
-        std::cout << "\n═══ Finalizing ═══\n";
         outputMgr.finalize();
         
-        std::cout << "\n╔════════════════════════════════════════════════════════╗\n";
-        std::cout << "║   Simulation Complete                                 ║\n";
-        std::cout << "╚════════════════════════════════════════════════════════╝\n";
-        std::cout << "\nOutput files:\n";
-        std::cout << "  - " << config.output.outputFile << " (ROOT file)\n";
-        std::cout << "  - " << config.output.paramFile << " (parameters)\n\n";
+        std::cout << "\n═══ Simulation Complete ═══\n";
+        std::cout << "Output saved to: " << config.output.outputFile << "\n";
+        std::cout << "Parameters saved to: " << config.output.paramFile << "\n";
+        std::cout << "\n";
         
         return 0;
         
     } catch (const std::exception& e) {
-        std::cerr << "\n╔════════════════════════════════════════════════════════╗\n";
-        std::cerr << "║   ERROR                                               ║\n";
-        std::cerr << "╚════════════════════════════════════════════════════════╝\n";
-        std::cerr << "\nError: " << e.what() << "\n\n";
+        std::cerr << "\nERROR: " << e.what() << "\n\n";
         return 1;
     }
 }

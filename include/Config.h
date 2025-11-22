@@ -1,4 +1,4 @@
-// Config.h - Complete configuration management for RAINIER
+// Config.h - Complete configuration management for RAINIER with YAML support
 #ifndef RAINIER_CONFIG_H
 #define RAINIER_CONFIG_H
 
@@ -9,6 +9,10 @@ namespace rainier {
 
 /**
  * @brief Configuration class for RAINIER simulation
+ * 
+ * Supports loading configuration from YAML files using yaml-cpp library.
+ * YAML provides cleaner syntax, native comment support, and better readability
+ * compared to JSON.
  */
 class Config {
 public:
@@ -62,8 +66,8 @@ public:
             double width = 5.0;
             double sigma = 300.0;
         };
-        std::vector<E1Resonance> e1Resonances = {{15.0, 5.0, 300.0}};
-        double constantT = 0.5;
+        std::vector<E1Resonance> e1Resonances;
+        double e1ConstantT = 0.5;
         
         enum class M1Model { STD_LORENTZ, SINGLE_PARTICLE, USER_DEFINED };
         M1Model m1Model = M1Model::STD_LORENTZ;
@@ -73,7 +77,7 @@ public:
             double width = 4.0;
             double sigma = 1.0;
         };
-        std::vector<M1Resonance> m1Resonances = {{7.0, 4.0, 1.0}};
+        std::vector<M1Resonance> m1Resonances;
         
         enum class E2Model { STD_LORENTZ, SINGLE_PARTICLE, USER_DEFINED };
         E2Model e2Model = E2Model::STD_LORENTZ;
@@ -82,75 +86,72 @@ public:
         double e2Sigma = 5.0;
     };
 
-	// Internal conversion configuration
-	struct InternalConversionConfig {
-	    bool enabled = true;
-	    enum class Model { BRICC, TABLE };
-	    Model model = Model::BRICC;
-	    std::string briccModel = "F";  // Frozen orbital
-	};
+    // Initial excitation configuration
+    struct InitialExcitationConfig {
+        enum class Mode { SINGLE, SELECT, SPREAD, FULL_REACTION };
+        Mode mode = Mode::SPREAD;
+        
+        // SINGLE mode parameters
+        double excitationEnergy = 7.0;
+        double spin = 0.5;
+        int parity = 1;
+        
+        // SELECT mode parameters
+        struct SelectState {
+            double energy;
+            double spin;
+            int parity;
+            double branchingRatio;
+        };
+        std::vector<SelectState> selectStates;
+    
+        // SPREAD mode parameters
+        double meanEnergy = 7.0;
+        double energySpread = 0.5;
+        
+        // FULL_REACTION mode
+        std::string populationFile = "";
+    };
 
     // Parity distribution configuration
     struct ParityConfig {
         enum class Model { EQUIPARTITION, ENERGY_DEPENDENT };
         Model model = Model::ENERGY_DEPENDENT;
         
+        // Energy-dependent parameters
         double parC = 0.5;
         double parD = 2.0;
     };
 
-    // Continuum level construction
+    // Continuum level configuration
     struct ContinuumConfig {
         enum class Distribution { POISSON, WIGNER };
         Distribution distribution = Distribution::POISSON;
         
-        double energySpacing = 0.1;   // MeV
+        double energySpacing = 0.025;
         bool forceBinNumber = false;
         int numBins = 100;
-        
-        int maxDiscreteLevel = 20;
+        int maxDiscreteLevel = 15;
     };
 
-    // Initial excitation configuration
-    struct InitialExcitationConfig {
-        enum class Mode { SINGLE, SELECT, SPREAD, FULL_REACTION };
-        Mode mode = Mode::SINGLE;
+    // Internal conversion configuration
+    struct InternalConversionConfig {
+        enum class Model { BRICC, TABLE };
+        Model model = Model::BRICC;
         
-        // SINGLE mode parameters
-        double excitationEnergy = 8.0;  // MeV
-        double spin = 0.5;
-        int parity = 1;
-        
-        // SELECT mode parameters (beta-decay-like)
-        struct SelectState {
-            double energy;
-            double spin;
-            int parity;
-            double branchingRatio;
-            
-            SelectState() : energy(0), spin(0), parity(1), branchingRatio(0) {}
-            SelectState(double e, double s, int p, double br)
-                : energy(e), spin(s), parity(p), branchingRatio(br) {}
-        };
-        std::vector<SelectState> selectStates;
-        
-        // SPREAD mode parameters
-        double meanEnergy = 8.0;
-        double energySpread = 0.5;
-        
-        // FULL_REACTION mode parameters
-        std::string populationFile;
+        bool enabled = true;
+        std::string briccModel = "F";  // F, R, or S
+        std::string tableFile = "";
     };
-
 
     // Simulation parameters
     struct SimulationConfig {
         int numRealizations = 1;
-        int eventsPerRealization = 100;
+        int eventsPerRealization = 10000;
         int updateInterval = 100;
         int saveInterval = 10000;
         bool useParallel = false;
-        unsigned int randomSeed = 12345;
+        int randomSeed = 12345;
     };
 
     // Output configuration
@@ -160,29 +161,54 @@ public:
         bool saveTree = true;
         bool saveLevelPopulations = true;
         int gammaSpectrumBins = 1000;
-        double maxGammaEnergy = 20.0;  // MeV
-        double maxPlotSpin = 10.0;
+        double maxGammaEnergy = 20.0;
+        double maxPlotSpin = 20.0;
     };
 
-    // Member variables
+    // Configuration sections
     NucleusConfig nucleus;
     LevelDensityConfig levelDensity;
     SpinCutoffConfig spinCutoff;
     GammaStrengthConfig gammaStrength;
+    InitialExcitationConfig initialExcitation;
     ParityConfig parity;
     ContinuumConfig continuum;
-    InitialExcitationConfig initialExcitation;
+    InternalConversionConfig internalConversion;
     SimulationConfig simulation;
-	InternalConversionConfig internalConversion;
     OutputConfig output;
 
-    // Methods
-    Config() = default;
-    
+    /**
+     * @brief Load configuration from YAML file
+     * @param filename Path to YAML configuration file
+     * @return Loaded configuration
+     * @throws std::runtime_error if file cannot be opened or parsed
+     */
     static Config loadFromFile(const std::string& filename);
+
+    /**
+     * @brief Save configuration to YAML file
+     * @param filename Path to output file
+     */
     void saveToFile(const std::string& filename) const;
+
+    /**
+     * @brief Create default configuration
+     * @param Z Atomic number
+     * @param A Mass number
+     * @return Default configuration for specified nucleus
+     */
     static Config createDefault(int Z, int A);
-    bool validate(std::string& errorMessage) const;
+
+    /**
+     * @brief Validate configuration
+     * @param errorMsg Output parameter for error message
+     * @return true if valid, false otherwise
+     */
+    bool validate(std::string& errorMsg) const;
+
+    /**
+     * @brief Print configuration to console
+     */
     void print() const;
 };
 
