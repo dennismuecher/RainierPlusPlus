@@ -161,12 +161,12 @@ Config Config::loadFromFile(const std::string& filename) {
 
 
                 // SELECT mode parameters - Simple one-line-per-state format!
-                else if (key == "SELECT_numStates") {
+                else if ( (key == "SELECT_numStates") && (config.initialExcitation.mode == Config::InitialExcitationConfig::Mode::SELECT) ) {
                     int numStates = std::stoi(value);
                     config.initialExcitation.selectStates.resize(numStates);
                     std::cout << "SELECT mode: expecting " << numStates << " states" << std::endl;
                 }
-                else if (key.find("SELECT_state_") == 0) {
+                else if ( (key.find("SELECT_state_") == 0)  && (config.initialExcitation.mode == Config::InitialExcitationConfig::Mode::SELECT) ) {
                     // Extract state number from key (e.g., "SELECT_state_1" -> 1)
                     int stateNum = std::stoi(key.substr(13)); // Skip "SELECT_state_"
                     
@@ -181,10 +181,9 @@ Config Config::loadFromFile(const std::string& filename) {
                             config.initialExcitation.selectStates[stateNum - 1].spin = spin;
                             config.initialExcitation.selectStates[stateNum - 1].parity = parity;
                             config.initialExcitation.selectStates[stateNum - 1].branchingRatio = branchingRatio;
-                            
                             std::cout << "  Parsed SELECT state " << stateNum << ": "
-                            << "E=" << energy << " MeV, J=" << spin << ", "
-                            << "π=" << (parity == 1 ? "+" : "-") << ", BR=" << branchingRatio << std::endl;
+                                << "E=" << energy << " MeV, J=" << spin << ", "
+                                << "π=" << (parity == 1 ? "+" : "-") << ", BR=" << branchingRatio << std::endl;
                         } else {
                             std::cerr << "Error parsing SELECT_state_" << stateNum
                             << ": invalid format '" << value << "'" << std::endl;
@@ -216,6 +215,8 @@ Config Config::loadFromFile(const std::string& filename) {
                 else if (key == "saveTree") config.output.saveTree = (value == "true");
                 else if (key == "gammaSpectrumBins") config.output.gammaSpectrumBins = std::stoi(value);
                 else if (key == "maxGammaEnergy") config.output.maxGammaEnergy = std::stod(value);
+                else if (key == "maxPlotSpin") config.output.maxPlotSpin = std::stod(value);
+
             }
             // Continuum section
             else if (currentSection == "continuum") {

@@ -128,7 +128,7 @@ void OutputManager::createLevelSpectraHistograms(int realization) {
     // Determine number of spin bins based on whether A is even or odd
     bool isEvenA = (config_.nucleus.A % 2 == 0);
     int maxSpinBin = static_cast<int>(config_.output.maxPlotSpin);
-    
+    std::cout <<"Max Spin Bin in createLevelSpectraHistograms: " <<maxSpinBin<<std::endl;
     // Create one histogram for each spin value
     for (int spinBin = 0; spinBin <= maxSpinBin; ++spinBin) {
         double spin = Level::binToSpin(spinBin, isEvenA);
@@ -179,6 +179,7 @@ void OutputManager::fillLevelSpectra(int realization, const Nucleus& nucleus) {
     
     std::cout << "Filling level spectra histograms for realization " << realization << "..." << std::endl;
     
+    std::cout << "getNumDiscreteLevels " << nucleus.getNumDiscreteLevels() << "..." << std::endl;
     // First, fill from discrete levels
     for (int i = 0; i < nucleus.getNumDiscreteLevels(); ++i) {
         auto level = nucleus.getDiscreteLevel(i);

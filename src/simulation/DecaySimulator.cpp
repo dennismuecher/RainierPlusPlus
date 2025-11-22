@@ -20,6 +20,7 @@
 #include <string>
 #include <unordered_map>
 #include <mutex>
+#include <sstream>
 
 //this is a helper class for debugging code performance: the call of "record" prints the time duration since the last time "record" was called, in microseconds
 
@@ -92,7 +93,8 @@ namespace rainier {
 
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
     : nucleus_(nucleus), config_(config), realization_(realization), numStuckEvents_(0) {
-    
+        std::cout << "  DecaySimulator entered" << std::endl;
+
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
     levelDensity_ = std::make_unique<BackShiftedFermiGas>(
@@ -139,7 +141,7 @@ void DecaySimulator::run() {
     
     for (int ev = 0; ev < config_.simulation.eventsPerRealization; ++ev) {
         if (ev % config_.simulation.updateInterval == 0) {
-            std::cout << "    Event " << ev << " / " 
+            std::cout << "Event " << ev << " / "
                      << config_.simulation.eventsPerRealization << "\r" << std::flush;
         }
         simulateEvent();
@@ -295,10 +297,118 @@ void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level,
             break;
         }
         
-        case Config::InitialExcitationConfig::Mode::SPREAD:
-            // To be implemented later
-            throw std::runtime_error("SPREAD mode not yet implemented");
+        case Config::InitialExcitationConfig::Mode::SPREAD: {
+            // SPREAD mode: Energy spread with spin distribution
+            // Following original RAINIER.C lines 545-600
+            
+            double meanEnergy = config_.initialExcitation.meanEnergy;
+            double energySpread = config_.initialExcitation.energySpread; // FWHM in MeV
+            
+            // Sample energy from Gaussian distribution
+            // energySpread is FWHM, need to convert to sigma
+            // FWHM = 2.355 * sigma, so sigma = FWHM / 2.355
+            double sigma = energySpread / 2.355;
+            excitationEnergy = rng_->Gaus(meanEnergy, sigma);
+            
+            // Make sure energy is positive and reasonable
+            if (excitationEnergy < 0.0) {
+                excitationEnergy = 0.1; // Minimum energy
+            }
+            if (excitationEnergy > nucleus_.getSn() + 5.0) {
+                excitationEnergy = nucleus_.getSn() + 5.0; // Cap at reasonable value
+            }
+            
+            // Randomly select parity (equipartition: 50/50)
+            int parity = rng_->Integer(2); // Returns 0 or 1
+            
+            // Calculate spin distribution at this energy using spin cutoff
+            // Original RAINIER.C lines 557-567
+            double spinCutoffSquared = spinCutoff_->getSigmaSquared(excitationEnergy);
+
+            // Build spin population distribution
+            // P(J) ∝ (J + 0.5) * exp(-(J + 0.5)² / (2σ²)) / σ²
+            int maxSpinBin = nucleus_.getMaxSpinBin();
+            std::vector<double> spinPopulation(maxSpinBin+1);
+            double totalPopulation = 0.0;
+            
+            for (int spinBin = 0; spinBin < maxSpinBin; ++spinBin) {
+                double spin = Level::binToSpin(spinBin, nucleus_.isEvenA());
+                
+                // Spin distribution formula from original RAINIER
+                double spinDensity = (spin + 0.5) *
+                                    std::exp(-std::pow(spin + 0.5, 2) / (2.0 * spinCutoffSquared)) /
+                                    spinCutoffSquared;
+                
+                spinPopulation[spinBin] = spinDensity;
+                totalPopulation += spinDensity;
+            }
+            
+            // Normalize
+            for (int spinBin = 0; spinBin < maxSpinBin; ++spinBin) {
+                spinPopulation[spinBin] /= totalPopulation;
+            }
+            
+            // Sample spin from distribution using cumulative method
+            double randomSpin = rng_->Uniform(1.0);
+            double cumulativePop = 0.0;
+            int selectedSpinBin = 0;
+            
+            for (int spinBin = 0; spinBin <= maxSpinBin; ++spinBin) {
+                cumulativePop += spinPopulation[spinBin];
+                if (randomSpin <= cumulativePop) {
+                    selectedSpinBin = spinBin;
+                    break;
+                }
+            }
+            
+            double selectedSpin = Level::binToSpin(selectedSpinBin, nucleus_.isEvenA());
+            
+            // Now find the level with this E-J-π combination
+            // Try discrete levels first
+            bool foundLevel = false;
+            if (excitationEnergy < nucleus_.getCriticalEnergy()) {
+                for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
+                    auto lvl = nucleus_.getDiscreteLevel(i);
+                    if (std::abs(lvl->getEnergy() - excitationEnergy) < 0.01 &&
+                        std::abs(lvl->getSpin() - selectedSpin) < 0.1 &&
+                        lvl->getParity() == parity) {
+                        level = lvl;
+                        foundLevel = true;
+                        break;
+                    }
+                }
+            }
+            
+            // If not in discrete, find in continuum
+            if (!foundLevel) {
+                int energyBin = nucleus_.getEnergyBin(excitationEnergy);
+                
+                // Get levels in this E-J-π bin
+                const auto& contLevels = nucleus_.getContinuumLevels(energyBin, selectedSpinBin, parity);
+                
+                if (!contLevels.empty()) {
+                    // Randomly select a level within this bin
+                    int randomIndex = rng_->Integer(contLevels.size());
+                    level = contLevels[randomIndex];
+                    excitationEnergy = level->getEnergy();
+                } else {
+                    // If no levels in this exact bin, try to find nearby
+                    // This can happen at energy boundaries
+                    std::stringstream ss;
+                    ss << "Could not find level for SPREAD mode!\n"
+                       << "  Sampled: E=" << excitationEnergy << " MeV, "
+                       << "J=" << selectedSpin << ", π=" << (parity == 1 ? "+" : "-") << "\n"
+                       << "  Mean energy: " << meanEnergy << " MeV ± " << energySpread << " MeV\n"
+                       << "  Critical energy: " << nucleus_.getCriticalEnergy() << " MeV\n"
+                       << "  Energy bin: " << energyBin << " (of " << nucleus_.getNumEnergyBins() << ")\n"
+                       << "  Spin bin: " << selectedSpinBin << "\n"
+                       << "  Levels in bin: " << contLevels.size();
+                    throw std::runtime_error(ss.str());
+                }
+            }
             break;
+        }
+
             
         case Config::InitialExcitationConfig::Mode::FULL_REACTION:
             // To be implemented later

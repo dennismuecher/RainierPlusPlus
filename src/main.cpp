@@ -81,6 +81,7 @@ int main(int argc, char* argv[]) {
             outputMgr.fillLevelSpectra(real, nucleus);
             
             DecaySimulator simulator(nucleus, config, real);
+
             simulator.run();
 
             outputMgr.saveRealization(real, simulator);

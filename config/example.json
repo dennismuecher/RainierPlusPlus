@@ -13,7 +13,7 @@
   "_modes": "SINGLE, SELECT, SPREAD, FULL_REACTION",
   
   "initialExcitation": {
-    "mode": "SELECT",
+    "mode": "SPREAD",
     
     "_SINGLE_parameters": "─── For mode: SINGLE (DICEBOX-like) ───",
     "SINGLE_excitationEnergy": 7.0,
@@ -151,6 +151,6 @@
     "saveLevelPopulations": true,
     "gammaSpectrumBins": 1000,
     "maxGammaEnergy": 20.0,
-    "maxPlotSpin": 10.0
+    "maxPlotSpin": 20.0
   }
 }
