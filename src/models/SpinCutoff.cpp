@@ -60,14 +60,6 @@ double VonEgidy05::getSigmaSquared(double Ex) const {
 // TALYS Spin Cutoff Model
 // ============================================================================
 
-TALYSSpinCutoff::TALYSSpinCutoff(const LevelDensityModel* densityModel, 
-                                 int A, double Sn,
-                                 double spinCutoffD, double Ed, 
-                                 double aAsymptotic)
-    : densityModel_(densityModel), A_(A), spinCutoffD_(spinCutoffD),
-      Ed_(Ed), Sn_(Sn), aAsymptotic_(aAsymptotic) {
-}
-
 TALYSSpinCutoff::TALYSSpinCutoff(const LevelDensityModel* densityModel,
                                  int A, double Sn,
                                  double spinCutoffD, double Ed,

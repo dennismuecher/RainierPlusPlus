@@ -128,7 +128,7 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
-    
+       
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
             spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
                 levelDensity_.get(),
