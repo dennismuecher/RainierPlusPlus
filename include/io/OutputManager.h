@@ -41,6 +41,18 @@ public:
     void fillLevelSpectra(int realization, const Nucleus& nucleus);
     
     /**
+     * @brief Create level density histograms showing ρ(E) in levels/MeV
+     * @param realization Realization number
+     */
+    void createLevelDensityHistograms(int realization);
+
+    /**
+     * @brief Fill level density histograms from the level density model and discrete levels
+     * @param realization Realization number
+     * @param simulator DecaySimulator containing the level density model
+     */
+    void fillLevelDensityHistograms(int realization, const DecaySimulator& simulator);
+    /**
      * @brief Finalize and close output file
      */
     void finalize();

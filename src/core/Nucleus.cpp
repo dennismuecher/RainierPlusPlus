@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <cmath>
 #include <TRandom2.h>
+#include <fstream>
+#include <sstream>
 
 namespace rainier {
 
@@ -27,41 +29,108 @@ void Nucleus::loadDiscreteLevels(const std::string& filename, int maxLevels) {
     std::cout << "Loading discrete levels from: " << filename << std::endl;
     
     try {
-        // Read level data from file
-        auto levelData = LevelFileReader::readLevelFile(
-            filename, Z_, A_, maxLevels);
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Cannot open levels file: " + filename);
+        }
         
-        // Convert to DiscreteLevel objects
-        discreteLevels_ = LevelFileReader::createDiscreteLevels(
-            levelData, constants::DEFAULT_MAX_HALFLIFE);
+        std::string line;
+        bool foundNucleus = false;
+        int totalLevelsInFile = 0;
         
-        // Fix transition types now that we know if nucleus is even/odd A
-        for (auto& level : discreteLevels_) {
-            for (auto& transition : level->getTransitions()) {
-                auto initialLevel = transition->getInitialLevel();
-                auto finalLevel = transition->getFinalLevel();
-                
-                auto transType = Transition::determineType(
-                    initialLevel->getSpin(),
-                    initialLevel->getParity(),
-                    finalLevel->getSpin(),
-                    finalLevel->getParity(),
-                    isEvenA()
-                );
-                transition->setType(transType);
+        // Clear both vectors
+        discreteLevels_.clear();
+        allDiscreteLevels_.clear();
+        
+        while (std::getline(file, line)) {
+            // Skip empty lines and comments
+            if (line.empty() || line[0] == '#') continue;
+            
+            // Check if this is a nucleus header line
+            // Format: "144Nd  144   60  202  294  101   15    7.817030    7.968790"
+            std::istringstream iss(line);
+            std::string nuclideName;
+            int fileA, fileZ, numLevels;
+            
+            // Try to parse as header line
+            if (iss >> nuclideName >> fileA >> fileZ >> numLevels) {
+                // Check if this matches our nucleus
+                if (fileA == A_ && fileZ == Z_) {
+                    foundNucleus = true;
+                    totalLevelsInFile = numLevels;
+                    std::cout << "  Found nucleus " << nuclideName
+                              << " (A=" << A_ << ", Z=" << Z_
+                              << ") with " << numLevels << " levels" << std::endl;
+                    
+                    // Now read exactly numLevels lines
+                    int levelIndex = 0;
+                    int linesRead = 0;
+                    
+                    while (linesRead < numLevels && std::getline(file, line)) {
+                        // Skip empty lines
+                        if (line.empty()) continue;
+                        
+                        // Parse level line
+                        // Format: "  1   0.000000   0.0  1  7.227E+22  ..."
+                        std::istringstream levelStream(line);
+                        int levelNum;
+                        double energy, spin, lifetime;
+                        int parity;
+                        
+                        if (!(levelStream >> levelNum >> energy >> spin >> parity >> lifetime)) {
+                            std::cerr << "Warning: Skipping malformed level line: " << line << std::endl;
+                            linesRead++;
+                            continue;
+                        }
+                        if (parity !=0 && parity !=1)
+                        {
+                            std::cout <<"Error in parity in line: " << linesRead <<": parity is" <<parity<<std::endl;
+                        }
+                        // Create level
+                        auto level = std::make_shared<DiscreteLevel>(energy, spin, parity, lifetime);
+                        level->setLevelIndex(levelIndex);
+                        
+                        // Store in allDiscreteLevels_ (ALL levels for this nucleus)
+                        allDiscreteLevels_.push_back(level);
+                        
+                        // Only add to discreteLevels_ if within maxLevels limit (for simulation)
+                        if (maxLevels <= 0 || static_cast<int>(discreteLevels_.size()) < maxLevels) {
+                            discreteLevels_.push_back(level);
+                        }
+                        
+                        levelIndex++;
+                        linesRead++;
+                    }
+                    
+                    // We've read all levels for our nucleus, we can stop
+                    break;
+                    
+                } else if (foundNucleus) {
+                    // We already found our nucleus and now hit another one, stop
+                    break;
+                }
             }
         }
         
-        if (discreteLevels_.empty()) {
-            throw std::runtime_error("No discrete levels loaded");
+        file.close();
+        
+        if (!foundNucleus) {
+            throw std::runtime_error("Nucleus A=" + std::to_string(A_) +
+                                   ", Z=" + std::to_string(Z_) + " not found in file");
         }
         
-        // Set critical energy to top of discrete region
+        if (discreteLevels_.empty()) {
+            throw std::runtime_error("No discrete levels loaded for A=" + std::to_string(A_));
+        }
+        
+        // Critical energy is automatically the highest energy in the truncated set
         criticalEnergy_ = discreteLevels_.back()->getEnergy();
         
-        std::cout << "Loaded " << discreteLevels_.size() 
-                  << " discrete levels up to " << criticalEnergy_ 
-                  << " MeV" << std::endl;
+        std::cout << "Loaded " << allDiscreteLevels_.size()
+                  << " total discrete levels from file for A=" << A_ << std::endl;
+        std::cout << "Using " << discreteLevels_.size()
+                  << " discrete levels up to " << criticalEnergy_
+                  << " MeV for simulation" << std::endl;
         
     } catch (const std::exception& e) {
         std::cerr << "Error loading discrete levels: " << e.what() << std::endl;
@@ -71,6 +140,7 @@ void Nucleus::loadDiscreteLevels(const std::string& filename, int maxLevels) {
         auto gs = std::make_shared<DiscreteLevel>(0.0, 0.0, 1, 1e20);
         gs->setLevelIndex(0);
         discreteLevels_.push_back(gs);
+        allDiscreteLevels_.push_back(gs);
         criticalEnergy_ = 0.0;
     }
 }

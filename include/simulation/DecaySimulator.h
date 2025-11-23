@@ -46,6 +46,9 @@ public:
     int getNumEvents() const { return events_.size(); }
 	
 	Nucleus& getNucleus()const  {return nucleus_;}
+    
+    const LevelDensityModel& getLevelDensityModel() const { return *levelDensity_; }
+    const SpinCutoffModel& getSpinCutoffModel() const { return *spinCutoff_; }
 
 private:
     void simulateEvent();

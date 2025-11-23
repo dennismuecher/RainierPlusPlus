@@ -6,6 +6,8 @@
 #include "core/Level.h"
 #include "core/DiscreteLevel.h"
 #include "core/ContinuumLevel.h"
+#include "models/LevelDensity.h"
+#include "models/SpinCutoff.h"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -308,6 +310,114 @@ void OutputManager::fillHistograms(int realization, const CascadeEvent& event) {
     }
 }
 
+void OutputManager::createLevelDensityHistograms(int realization) {
+    std::string suffix = "_real" + std::to_string(realization);
+    
+    // Total level density from model (all J, both parities)
+    std::string name = "hTotalLevelDensity" + suffix;
+    auto hTotal = new TH1D(name.c_str(),
+                           ("Total Level Density (Model), Real " + std::to_string(realization)).c_str(),
+                           200,  // Number of bins
+                           0.0,  // Min energy
+                           config_.initialExcitation.excitationEnergy + 2.0);  // Max energy
+    hTotal->GetXaxis()->SetTitle("E_{x} (MeV)");
+    hTotal->GetYaxis()->SetTitle("#rho(E) (levels/MeV)");
+    hTotal->SetLineColor(kBlue);
+    hTotal->SetLineWidth(2);
+    histograms1D_[name] = hTotal;
+    
+    // Discrete level density (binned count of discrete levels)
+    name = "hDiscreteLevelDensity" + suffix;
+    auto hDiscrete = new TH1D(name.c_str(),
+                              ("Discrete Level Density, Real " + std::to_string(realization)).c_str(),
+                              200,  // Same binning as total
+                              0.0,
+                              config_.initialExcitation.excitationEnergy + 2.0);
+    hDiscrete->GetXaxis()->SetTitle("E_{x} (MeV)");
+    hDiscrete->GetYaxis()->SetTitle("#rho(E) (levels/MeV)");
+    hDiscrete->SetLineColor(kRed);
+    hDiscrete->SetLineWidth(2);
+    hDiscrete->SetFillStyle(3004);  // Hatched fill
+    hDiscrete->SetFillColor(kRed);
+    histograms1D_[name] = hDiscrete;
+}
+void OutputManager::fillLevelDensityHistograms(int realization, const DecaySimulator& simulator) {
+    std::string suffix = "_real" + std::to_string(realization);
+    
+    // Get the level density model (it returns a reference, not a pointer)
+    const auto& levelDensity = simulator.getLevelDensityModel();
+    const auto& spinCutoff = simulator.getSpinCutoffModel();
+    const auto& nucleus = simulator.getNucleus();
+    
+    bool isEvenA = nucleus.isEvenA();
+    int maxSpinBin = nucleus.getMaxSpinBin();
+    
+    // Fill total level density from model
+    std::string name = "hTotalLevelDensity" + suffix;
+    if (histograms1D_.count(name)) {
+        auto hTotal = histograms1D_[name];
+        
+        for (int bin = 1; bin <= hTotal->GetNbinsX(); ++bin) {
+            double energy = hTotal->GetBinCenter(bin);
+            
+            if (energy < 0.001) continue;  // Skip very low energies
+            
+            // Sum over all spins and both parities
+            double totalDensity = 0.0;
+            
+            for (int spinBin = 0; spinBin <= maxSpinBin; ++spinBin) {
+                double spin = Level::binToSpin(spinBin, isEvenA);
+                
+                // Sum both parities (assuming equal distribution)
+                for (int parity = 0; parity <= 1; ++parity) {
+                    double density = levelDensity.getDensity(energy, spin, parity);
+                    totalDensity += density;
+                }
+            }
+            
+            hTotal->SetBinContent(bin, totalDensity);
+        }
+    }
+    
+    // Fill discrete level density using a sliding window approach
+    // USE ALL LEVELS FROM FILE, not just the truncated set
+    name = "hDiscreteLevelDensity" + suffix;
+    if (histograms1D_.count(name)) {
+        auto hDiscrete = histograms1D_[name];
+        
+        // Define the energy window for counting levels (e.g., 1 MeV)
+        double energyWindow = 1.0;  // MeV - adjustable parameter
+        
+        for (int bin = 1; bin <= hDiscrete->GetNbinsX(); ++bin) {
+            double energy = hDiscrete->GetBinCenter(bin);
+            
+            // Count levels within ±energyWindow/2 of this energy
+            double eMin = energy - energyWindow / 2.0;
+            double eMax = energy + energyWindow / 2.0;
+            
+            int count = 0;
+            // Use ALL discrete levels from file (not truncated)
+            for (int i = 0; i < nucleus.getNumAllDiscreteLevels(); ++i) {
+                auto level = nucleus.getAllDiscreteLevel(i);
+                double levelEnergy = level->getEnergy();
+                
+                if (levelEnergy >= eMin && levelEnergy < eMax) {
+                    count++;
+                }
+            }
+            
+            // Level density = number of levels / energy window
+            double density = static_cast<double>(count) / energyWindow;
+            hDiscrete->SetBinContent(bin, density);
+        }
+    }
+    
+    std::cout << "  Filled level density histograms (discrete window: 1.0 MeV)" << std::endl;
+    std::cout << "  Used " << nucleus.getNumAllDiscreteLevels()
+              << " levels from file (vs " << nucleus.getNumDiscreteLevels()
+              << " for simulation)" << std::endl;
+}
+
 void OutputManager::saveRealization(int realization, const DecaySimulator& simulator) {
     // Create histograms for this realization if not already created
     std::string suffix = "_real" + std::to_string(realization);
@@ -316,11 +426,15 @@ void OutputManager::saveRealization(int realization, const DecaySimulator& simul
     if (histograms1D_.count(testName) == 0) {
         createHistograms(realization);
         createLevelSpectraHistograms(realization);
+        createLevelDensityHistograms(realization);
     }
     
     // Fill level spectra from the nucleus
     fillLevelSpectra(realization, simulator.getNucleus());
     
+    // Fill level density histograms
+    fillLevelDensityHistograms(realization, simulator);  // ADD THIS LINE
+       
     // Fill event-by-event histograms
     if (config_.output.saveTree) {
         for (const auto& event : simulator.getEvents()) {

@@ -62,7 +62,12 @@ public:
 
     // Access discrete levels
     int getNumDiscreteLevels() const { return discreteLevels_.size(); }
+    int getNumAllDiscreteLevels() const { return allDiscreteLevels_.size(); }
+        
     std::shared_ptr<DiscreteLevel> getDiscreteLevel(int index) const;
+    std::shared_ptr<DiscreteLevel> getAllDiscreteLevel(int index) const {
+        return allDiscreteLevels_.at(index);
+    }
     const std::vector<std::shared_ptr<DiscreteLevel>>& getDiscreteLevels() const {
         return discreteLevels_;
     }
@@ -130,6 +135,7 @@ private:
     
     // Discrete levels
     std::vector<std::shared_ptr<DiscreteLevel>> discreteLevels_;
+    std::vector<std::shared_ptr<DiscreteLevel>> allDiscreteLevels_;
     double criticalEnergy_;    // Top of discrete region (MeV)
     
     // Continuum levels

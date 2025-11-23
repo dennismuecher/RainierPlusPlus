@@ -226,7 +226,7 @@ internalConversion:
 
 simulation:
   numRealizations: 1                 # Number of independent realizations
-  eventsPerRealization: 100000        # Events per realization
+  eventsPerRealization: 10000        # Events per realization
   updateInterval: 1000                # Progress update interval (events)
   saveInterval: 10000                # Data save interval (events)
   useParallel: false                 # Enable parallel execution (OpenMP)
