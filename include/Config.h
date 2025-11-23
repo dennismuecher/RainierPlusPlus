@@ -46,14 +46,17 @@ public:
         std::string tableFile = "";   // For TABLE model
     };
 
-    // Spin cutoff model configuration
     struct SpinCutoffConfig {
-        enum class Model { VON_EGIDY_05, SINGLE_PARTICLE, RIGID_SPHERE, 
+        enum class Model { VON_EGIDY_05, SINGLE_PARTICLE, RIGID_SPHERE,
                           VON_EGIDY_09, TALYS, USER_DEFINED };
         Model model = Model::TALYS;
         
         double spinCutoffD = 3.0;     // Discrete region spin cutoff
         double Ed = 2.0;               // Matching energy (MeV)
+        
+        // Oslo energy shift (applies to all models when enabled)
+        bool useOsloShift = false;    // Enable Oslo-style energy shift
+        double osloShift = 0.12;      // Energy shift (MeV)
     };
 
     // Gamma strength function configuration
@@ -94,6 +97,12 @@ public:
         bool m1StrUpbend = false;
         double m1UpbendConst = 5e-8;  // C parameter
         double m1UpbendExp = 1.0;     // A parameter (positive)
+        
+        // M1 single particle parameters
+        double m1SingleParticleSigma = 4e-11;  // MeV^-3
+
+        // E2 single particle parameters
+        double e2SingleParticleSigma = 4e-11;  // MeV^-5
     };
 
     // Initial excitation configuration

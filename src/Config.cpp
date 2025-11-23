@@ -163,6 +163,12 @@ Config Config::loadFromFile(const std::string& filename) {
                 if (talys["Ed"]) 
                     config.spinCutoff.Ed = talys["Ed"].as<double>();
             }
+            
+            // Oslo shift (applies to all models)
+            if (sc["useOsloShift"])
+                config.spinCutoff.useOsloShift = sc["useOsloShift"].as<bool>();
+            if (sc["osloShift"])
+                config.spinCutoff.osloShift = sc["osloShift"].as<double>();
         }
         
         // =================================================================
@@ -238,6 +244,13 @@ Config Config::loadFromFile(const std::string& filename) {
             if (gs["m1UpbendExp"])
                 config.gammaStrength.m1UpbendExp = gs["m1UpbendExp"].as<double>();
 
+            //M1 and E2 single particle strength parameters
+            if (gs["m1SingleParticleSigma"])
+                config.gammaStrength.m1SingleParticleSigma = gs["m1SingleParticleSigma"].as<double>();
+
+            if (gs["e2SingleParticleSigma"])
+                config.gammaStrength.e2SingleParticleSigma = gs["e2SingleParticleSigma"].as<double>();
+            
             // Width fluctuation
             if (yaml["widthFluctuation"]) {
                 auto wfd = yaml["widthFluctuation"];

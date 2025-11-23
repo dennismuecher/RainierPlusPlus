@@ -27,14 +27,19 @@ double SpinCutoffModel::getSpinDistribution(double Ex, double spin) const {
 // Von Egidy 2005 Model
 // ============================================================================
 
-VonEgidy05::VonEgidy05(const LevelDensityModel* densityModel, int A)
-    : densityModel_(densityModel), A_(A) {
+
+VonEgidy05::VonEgidy05(const LevelDensityModel* densityModel, int A, double osloShift)
+    : densityModel_(densityModel), A_(A), osloShift_(osloShift) {
 }
+
 
 double VonEgidy05::getSigmaSquared(double Ex) const {
     // Von Egidy & Bucurescu, PRC 72, 044311 (2005)
     // Original RAINIER lines 233-236
     // σ² = 0.0146 A^(5/3) [1 + √(1 + 4aU)] / (2a)
+    
+    double shiftedEx = Ex - osloShift_;  // Apply Oslo shift
+    if (shiftedEx < 0.0) shiftedEx = 1e-8;  // Safety check
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     
@@ -63,43 +68,55 @@ TALYSSpinCutoff::TALYSSpinCutoff(const LevelDensityModel* densityModel,
       Ed_(Ed), Sn_(Sn), aAsymptotic_(aAsymptotic) {
 }
 
+TALYSSpinCutoff::TALYSSpinCutoff(const LevelDensityModel* densityModel,
+                                 int A, double Sn,
+                                 double spinCutoffD, double Ed,
+                                 double aAsymptotic, double osloShift)
+    : densityModel_(densityModel), A_(A), spinCutoffD_(spinCutoffD),
+      Ed_(Ed), Sn_(Sn), aAsymptotic_(aAsymptotic), osloShift_(osloShift) {
+}
+
 double TALYSSpinCutoff::getSigmaSquared(double Ex) const {
-    // TALYS 1.8 default model
-    // Original RAINIER lines 253-268
-    // Interpolates between discrete region, Sn, and asymptotic formula
+    // Apply Oslo shift to Ex first (like original RAINIER)
+    double shiftedEx = Ex - osloShift_;
+    if (shiftedEx < 0.0) shiftedEx = 1e-8;
     
     double spinCutoffD2 = spinCutoffD_ * spinCutoffD_;
     
-    // Discrete region
+    // Discrete region - use original Ex for comparison, not shifted
     if (Ex <= Ed_) {
         return spinCutoffD2;
     }
     
-    // Calculate sigma at Sn for interpolation
-    double U_Sn = densityModel_->getEffectiveEnergy(Sn_);
+    // Calculate dEff and dLDa using shifted Ex (matches original RAINIER)
+    double U = densityModel_->getEffectiveEnergy(shiftedEx);
     const auto* bsfg = dynamic_cast<const BackShiftedFermiGas*>(densityModel_);
-    double a_Sn = 15.0;
+    double a = 15.0;
     if (bsfg) {
-        a_Sn = bsfg->getLevelDensityParameter(Sn_);
+        a = bsfg->getLevelDensityParameter(shiftedEx);
     }
     
-    double spinCutoffSn2 = 0.01389 * std::pow(A_, 5.0/3.0) / aAsymptotic_ * 
+    // Calculate sigma at Sn using shifted Sn
+    double shiftedSn = Sn_ - osloShift_;
+    if (shiftedSn < 0.0) shiftedSn = 1e-8;
+    
+    double U_Sn = densityModel_->getEffectiveEnergy(shiftedSn);
+    double a_Sn = 15.0;
+    if (bsfg) {
+        a_Sn = bsfg->getLevelDensityParameter(shiftedSn);
+    }
+    
+    double spinCutoffSn2 = 0.01389 * std::pow(A_, 5.0/3.0) / aAsymptotic_ *
                           std::sqrt(a_Sn * U_Sn);
     
-    // Interpolation region
+    // Interpolation region (use original Ex for comparison)
     if (Ex < Sn_) {
         double fraction = (Ex - Ed_) / (Sn_ - Ed_);
         return spinCutoffD2 + fraction * (spinCutoffSn2 - spinCutoffD2);
     }
     
-    // Asymptotic region (Ex >= Sn)
-    double U = densityModel_->getEffectiveEnergy(Ex);
-    double a = 15.0;
-    if (bsfg) {
-        a = bsfg->getLevelDensityParameter(Ex);
-    }
-    
-    double sigma2 = 0.01389 * std::pow(A_, 5.0/3.0) / aAsymptotic_ * 
+    // Asymptotic region (Ex >= Sn) - use shifted values
+    double sigma2 = 0.01389 * std::pow(A_, 5.0/3.0) / aAsymptotic_ *
                    std::sqrt(a * U);
     
     return sigma2;
@@ -109,14 +126,17 @@ double TALYSSpinCutoff::getSigmaSquared(double Ex) const {
 // Single Particle Model
 // ============================================================================
 
-SingleParticle::SingleParticle(const LevelDensityModel* densityModel, int A)
-    : densityModel_(densityModel), A_(A) {
+SingleParticle::SingleParticle(const LevelDensityModel* densityModel, int A, double osloShift)
+    : densityModel_(densityModel), A_(A), osloShift_(osloShift) {
 }
 
 double SingleParticle::getSigmaSquared(double Ex) const {
     // Gholami et al., PRC 75, 044308 (2007)
     // Original RAINIER lines 239-241
     // σ² = 0.1461 √(aU) A^(2/3)
+    
+    double shiftedEx = Ex - osloShift_;
+    if (shiftedEx < 0.0) shiftedEx = 1e-8;
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     
@@ -135,14 +155,17 @@ double SingleParticle::getSigmaSquared(double Ex) const {
 // Rigid Sphere Model
 // ============================================================================
 
-RigidSphere::RigidSphere(const LevelDensityModel* densityModel, int A)
-    : densityModel_(densityModel), A_(A) {
+RigidSphere::RigidSphere(const LevelDensityModel* densityModel, int A, double osloShift)
+    : densityModel_(densityModel), A_(A), osloShift_(osloShift) {
 }
 
 double RigidSphere::getSigmaSquared(double Ex) const {
     // Grimes et al., PRC 10 (1974) 2373
     // Original RAINIER lines 243-245
     // σ² = 0.0145 √(U/a) A^(5/3)
+    
+    double shiftedEx = Ex - osloShift_;
+    if (shiftedEx < 0.0) shiftedEx = 1e-8;
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     

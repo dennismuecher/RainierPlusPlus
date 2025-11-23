@@ -106,8 +106,41 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
         nucleus.getA()
     );
     
-    spinCutoff_ = std::make_unique<VonEgidy05>(levelDensity_.get(), nucleus.getA());
+        // Create spin cutoff model based on config
+        if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
+            spinCutoff_ = std::make_unique<VonEgidy05>(
+                levelDensity_.get(),
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
+            spinCutoff_ = std::make_unique<SingleParticle>(
+                levelDensity_.get(),
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
+            spinCutoff_ = std::make_unique<RigidSphere>(
+                levelDensity_.get(),
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
     
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
+            spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
+                levelDensity_.get(),
+                nucleus.getA(),
+                nucleus.getSn(),
+                config.spinCutoff.spinCutoffD,
+                config.spinCutoff.Ed,
+                config.levelDensity.aAsymptotic,
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        
     std::vector<Resonance> e1Resonances;
     for (const auto& r : config.gammaStrength.e1Resonances) {
         e1Resonances.push_back({r.energy, r.width, r.sigma});
@@ -118,13 +151,27 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
     for (const auto& r : config.gammaStrength.m1Resonances) {
         m1Resonances.push_back({r.energy, r.width, r.sigma});
     }
-        auto m1 = std::make_unique<M1StandardLorentz>(config.gammaStrength.m1Resonances, config);
+    
+        
+    // M1 strength - check model
+    std::unique_ptr<GammaStrengthFunction> m1;
+    if (config.gammaStrength.m1Model == Config::GammaStrengthConfig::M1Model::SINGLE_PARTICLE) {
+            m1 = std::make_unique<M1SingleParticle>(config.gammaStrength.m1SingleParticleSigma);
+    } else {
+            m1 = std::make_unique<M1StandardLorentz>(config.gammaStrength.m1Resonances, config);
+    }
 
-    auto e2 = std::make_unique<E2StandardLorentz>(
-        config.gammaStrength.e2Energy,
-        config.gammaStrength.e2Width,
-        config.gammaStrength.e2Sigma
-    );
+    // E2 strength - check model
+    std::unique_ptr<GammaStrengthFunction> e2;
+    if (config.gammaStrength.e2Model == Config::GammaStrengthConfig::E2Model::SINGLE_PARTICLE) {
+            e2 = std::make_unique<E2SingleParticle>(config.gammaStrength.e2SingleParticleSigma);
+    } else {
+            e2 = std::make_unique<E2StandardLorentz>(
+                config.gammaStrength.e2Energy,
+                config.gammaStrength.e2Width,
+                config.gammaStrength.e2Sigma
+        );
+    }
     
     gammaStrength_ = std::make_unique<CombinedStrength>(
         std::move(e1), std::move(m1), std::move(e2)

@@ -95,7 +95,7 @@ levelDensity:
 # =============================================================================
 # SPIN CUTOFF
 # =============================================================================
-# Available models: VON_EGIDY_05, VON_EGIDY_09, TALYS, SINGLE_PARTICLE, RIGID_SPHERE
+# Available models: VON_EGIDY_05, VON_EGIDY_09, TALYS, SINGLE_PARTICLE, RIGID_SPHERE, USER_DEFINED
 
 spinCutoff:
   model: TALYS                       # Choose spin cutoff model
@@ -106,8 +106,14 @@ spinCutoff:
   TALYS:
     spinCutoffD: 3.0                 # Discrete region spin cutoff
     Ed: 2.0                          # Matching energy (MeV)
+    
+  # Oslo energy shift (optional, applies to any model)
+    useOsloShift: false              # Enable Oslo-style shift
+    osloShift: 0.12                  # Energy shift for spin cutoff (MeV)
 
   # Note: VON_EGIDY models require no parameters
+  # Note: USER_DEFINED model allows custom formulas (not yet implemented)
+
 
 # =============================================================================
 # GAMMA STRENGTH FUNCTIONS
@@ -145,6 +151,9 @@ gammaStrength:
   m1StrUpbend: false              # Enable M1 upbend
   m1UpbendConst: 5.0e-8           # C parameter
   m1UpbendExp: 1.0                # A exponent (positive)
+  
+  # M1 single particle
+  m1SingleParticleSigma: 4.0e-11 # Single particle strength (MeV^-3)
 
   # ---------------------------------------------------------------------------
   # E2 (Electric Quadrupole) Strength Function
@@ -155,6 +164,9 @@ gammaStrength:
   e2Energy: 12.0                     # Resonance energy (MeV)
   e2Width: 4.0                       # Width (MeV)
   e2Sigma: 5.0                       # Cross section (mb)
+  
+  # E2 single particle
+  e2SingleParticleSigma: 4.0e-11 # Single particle strength (MeV^-5)
 
 # =============================================================================
 # WIDTH FLUCTUATION DISTRIBUTION (WFD)

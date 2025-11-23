@@ -42,31 +42,36 @@ public:
  */
 class VonEgidy05 : public SpinCutoffModel {
 public:
-    VonEgidy05(const LevelDensityModel* densityModel, int A);
+    VonEgidy05(const LevelDensityModel* densityModel, int A, double userE1Shift = 0.0);
     double getSigmaSquared(double Ex) const override;
 
 private:
     const LevelDensityModel* densityModel_;
     int A_;
+    double userE1Shift_;  // Oslo energy shift
+
 };
 
 /**
  * @brief TALYS default spin cutoff model
  * Interpolates between discrete and asymptotic regions
  */
+
 class TALYSSpinCutoff : public SpinCutoffModel {
 public:
     TALYSSpinCutoff(const LevelDensityModel* densityModel, int A, double Sn,
-                    double spinCutoffD, double Ed, double aAsymptotic);
+                    double spinCutoffD, double Ed, double aAsymptotic,
+                    double osloShift = 0.0);
     double getSigmaSquared(double Ex) const override;
 
 private:
     const LevelDensityModel* densityModel_;
     int A_;
-    double spinCutoffD_;  // Discrete region value
-    double Ed_;           // Matching energy
-    double Sn_;           // Neutron separation energy
-    double aAsymptotic_;  // Asymptotic a value
+    double spinCutoffD_;
+    double Ed_;
+    double Sn_;
+    double aAsymptotic_;
+    double osloShift_;
 };
 
 /**
