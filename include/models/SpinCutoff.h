@@ -42,14 +42,13 @@ public:
  */
 class VonEgidy05 : public SpinCutoffModel {
 public:
-    VonEgidy05(const LevelDensityModel* densityModel, int A, double userE1Shift = 0.0);
+    VonEgidy05(const LevelDensityModel* densityModel, int A, double osloShift = 0.0);
     double getSigmaSquared(double Ex) const override;
 
 private:
     const LevelDensityModel* densityModel_;
     int A_;
-    double userE1Shift_;  // Oslo energy shift
-
+    double osloShift_; 
 };
 
 /**
@@ -81,12 +80,13 @@ private:
  */
 class SingleParticle : public SpinCutoffModel {
 public:
-    SingleParticle(const LevelDensityModel* densityModel, int A);
+    SingleParticle(const LevelDensityModel* densityModel, int A, double osloShift = 0.0);
     double getSigmaSquared(double Ex) const override;
 
 private:
     const LevelDensityModel* densityModel_;
     int A_;
+    double osloShift_;
 };
 
 /**
@@ -96,12 +96,13 @@ private:
  */
 class RigidSphere : public SpinCutoffModel {
 public:
-    RigidSphere(const LevelDensityModel* densityModel, int A);
+    RigidSphere(const LevelDensityModel* densityModel, int A, double osloShift = 0.0);
     double getSigmaSquared(double Ex) const override;
 
 private:
     const LevelDensityModel* densityModel_;
     int A_;
+    double osloShift_;
 };
 
 /**
