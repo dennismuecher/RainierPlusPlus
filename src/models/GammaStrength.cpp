@@ -165,15 +165,6 @@ double E1StandardLorentz::getStrength(double Ex, double Egamma) const {
 // M1 Standard Lorentzian
 // ============================================================================
 
-M1StandardLorentz::M1StandardLorentz(const std::vector<Resonance>& resonances,
-                                     bool useUpbend,
-                                     double upbendConstant,
-                                     double upbendExponent)
-    : resonances_(resonances),
-      useUpbend_(useUpbend),
-      upbendConstant_(upbendConstant),
-      upbendExponent_(upbendExponent) {
-}
 
 double M1StandardLorentz::getStrength(double Ex, double Egamma) const {
     // M1 Standard Lorentzian
@@ -191,12 +182,14 @@ double M1StandardLorentz::getStrength(double Ex, double Egamma) const {
         strength += constants::K_X1 * res.sigma * term;
     }
     
-    // Add upbend if requested
-    if (useUpbend_) {
-        double upbend = upbendConstant_ * std::exp(-upbendExponent_ * Egamma);
-        strength += upbend;
-    }
+    // Add upbend if enabled
     
+    if (config_.gammaStrength.m1StrUpbend) {
+            double upbend = config_.gammaStrength.m1UpbendConst *
+                           exp(-config_.gammaStrength.m1UpbendExp * Egamma);
+            strength += upbend;
+        }
+       
     return strength * std::pow(Egamma, 3);
 }
 

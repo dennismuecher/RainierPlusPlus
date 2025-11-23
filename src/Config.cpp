@@ -230,6 +230,29 @@ Config Config::loadFromFile(const std::string& filename) {
                 else if (model == "SINGLE_PARTICLE") 
                     config.gammaStrength.e2Model = Config::GammaStrengthConfig::E2Model::SINGLE_PARTICLE;
             }
+            // M1 upbend
+            if (gs["m1StrUpbend"])
+                config.gammaStrength.m1StrUpbend = gs["m1StrUpbend"].as<bool>();
+            if (gs["m1UpbendConst"])
+                config.gammaStrength.m1UpbendConst = gs["m1UpbendConst"].as<double>();
+            if (gs["m1UpbendExp"])
+                config.gammaStrength.m1UpbendExp = gs["m1UpbendExp"].as<double>();
+
+            // Width fluctuation
+            if (yaml["widthFluctuation"]) {
+                auto wfd = yaml["widthFluctuation"];
+                if (wfd["model"]) {
+                    std::string model = wfd["model"].as<std::string>();
+                    if (model == "PTD")
+                        config.gammaStrength.wfdModel = Config::GammaStrengthConfig::WFDModel::PTD;
+                    else if (model == "NU")
+                        config.gammaStrength.wfdModel = Config::GammaStrengthConfig::WFDModel::NU;
+                    else if (model == "OFF")
+                        config.gammaStrength.wfdModel = Config::GammaStrengthConfig::WFDModel::OFF;
+                }
+                if (wfd["nuParameter"])
+                    config.gammaStrength.nuParameter = wfd["nuParameter"].as<double>();
+            }
             
             if (gs["e2Energy"]) config.gammaStrength.e2Energy = gs["e2Energy"].as<double>();
             if (gs["e2Width"]) config.gammaStrength.e2Width = gs["e2Width"].as<double>();

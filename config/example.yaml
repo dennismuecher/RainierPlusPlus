@@ -140,6 +140,11 @@ gammaStrength:
     - energy: 7.0                    # Resonance energy (MeV)
       width: 4.0                     # Width (MeV)
       sigma: 1.0                     # Cross section (mb)
+      
+# M1 upbend (Oslo low-energy enhancement)
+  m1StrUpbend: false              # Enable M1 upbend
+  m1UpbendConst: 5.0e-8           # C parameter
+  m1UpbendExp: 1.0                # A exponent (positive)
 
   # ---------------------------------------------------------------------------
   # E2 (Electric Quadrupole) Strength Function
@@ -151,6 +156,18 @@ gammaStrength:
   e2Width: 4.0                       # Width (MeV)
   e2Sigma: 5.0                       # Cross section (mb)
 
+# =============================================================================
+# WIDTH FLUCTUATION DISTRIBUTION (WFD)
+# =============================================================================
+# Reason statistical codes exist - models fluctuations in partial widths
+# Available models: PTD, NU, OFF
+
+widthFluctuation:
+  model: PTD                      # PTD=Porter-Thomas (fastest, nu=1)
+                                  # NU=Chi-squared with custom nu
+                                  # OFF=No fluctuations (like TALYS)
+  nuParameter: 0.5                # For NU model only (Koehler: nu~0.5)
+  
 # =============================================================================
 # PARITY DISTRIBUTION
 # =============================================================================

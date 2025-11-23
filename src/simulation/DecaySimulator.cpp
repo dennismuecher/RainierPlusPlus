@@ -118,8 +118,8 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
     for (const auto& r : config.gammaStrength.m1Resonances) {
         m1Resonances.push_back({r.energy, r.width, r.sigma});
     }
-    auto m1 = std::make_unique<M1StandardLorentz>(m1Resonances);
-    
+    auto m1 = std::make_unique<M1StandardLorentz>(m1Resonances, config);
+
     auto e2 = std::make_unique<E2StandardLorentz>(
         config.gammaStrength.e2Energy,
         config.gammaStrength.e2Width,
@@ -755,11 +755,23 @@ double DecaySimulator::getDecayTime(double width) {
 }
 
 double DecaySimulator::getPorterThomasFluctuation() {
-    
-    double u = rng_->Rndm();   // Uniform (0,1)
-    return -2.0 * std::log(u);
-    //double gaussian = rng_->Gaus(0.0, 1.0);
-    //return gaussian * gaussian;
+    if (config_.gammaStrength.wfdModel == Config::GammaStrengthConfig::WFDModel::OFF) {
+        return 1.0;  // No fluctuations
+    }
+    else if (config_.gammaStrength.wfdModel == Config::GammaStrengthConfig::WFDModel::PTD) {
+        // Porter-Thomas: nu=1, chi-squared distribution
+        return gRandom->Exp(1.0);  // Same as chi-squared with nu=1
+    }
+    else {  // NU model
+        double nu = config_.gammaStrength.nuParameter;
+        // Chi-squared with nu degrees of freedom
+        double sum = 0.0;
+        for (int i = 0; i < (int)(nu + 0.5); i++) {
+            double g = gRandom->Gaus(0, 1);
+            sum += g * g;
+        }
+        return sum / nu;  // Normalize to mean=1
+    }
 }
 
 double DecaySimulator::getInternalConversionCoeff(double Egamma, int transType, 

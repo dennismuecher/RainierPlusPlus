@@ -84,6 +84,16 @@ public:
         double e2Energy = 12.0;
         double e2Width = 4.0;
         double e2Sigma = 5.0;
+        
+        // Width Fluctuation Distribution
+        enum class WFDModel { PTD, NU, OFF };
+        WFDModel wfdModel = WFDModel::PTD;
+        double nuParameter = 0.5;  // For NU model
+            
+        // M1 upbend parameters
+        bool m1StrUpbend = false;
+        double m1UpbendConst = 5e-8;  // C parameter
+        double m1UpbendExp = 1.0;     // A parameter (positive)
     };
 
     // Initial excitation configuration

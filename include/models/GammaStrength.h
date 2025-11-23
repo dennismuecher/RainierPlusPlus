@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <memory>
+#include "Config.h"
 
 namespace rainier {
 
@@ -106,17 +107,15 @@ private:
  */
 class M1StandardLorentz : public GammaStrengthFunction {
 public:
-    M1StandardLorentz(const std::vector<Resonance>& resonances,
-                      bool useUpbend = false,
-                      double upbendConstant = 0.1,
-                      double upbendExponent = 0.5);
+    M1StandardLorentz(const std::vector<Config::GammaStrengthConfig::M1Resonance>& resonances,
+                      const Config& config)
+        : resonances_(resonances), config_(config) {}
+    
     double getStrength(double Ex, double Egamma) const override;
     
 private:
-    std::vector<Resonance> resonances_;
-    bool useUpbend_;
-    double upbendConstant_;
-    double upbendExponent_;
+    std::vector<Config::GammaStrengthConfig::M1Resonance> resonances_;
+    const Config& config_;
 };
 
 /**
