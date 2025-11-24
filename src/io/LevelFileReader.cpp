@@ -6,13 +6,14 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <TRandom2.h>
 
 namespace rainier {
 
 std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
     const std::string& filename,
     int targetZ, int targetA,
-    int maxLevels) {
+    int maxLevels = 0) {
     
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -58,8 +59,9 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
         throw std::runtime_error("No levels found in file (nLvlTot < 2)");
     }
 
-    int levelsToRead = std::min(maxLevels, numLevelsInFile);
-    std::cout << "Reading " << levelsToRead << " levels (max requested: " 
+    int levelsToRead = (maxLevels == 0) ? numLevelsInFile : std::min(maxLevels, numLevelsInFile);
+    
+    std::cout << "Reading " << levelsToRead << " levels (max requested: "
               << maxLevels << ", available: " << numLevelsInFile << ")" << std::endl;
     
     std::vector<LevelData> levels;
@@ -91,17 +93,25 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
         bool hasField5 = static_cast<bool>(levelStream >> field5);
         bool hasField6 = static_cast<bool>(levelStream >> field6);
         
-        
         if (hasField5 && hasField6) {
-            // Both fields present: field5=halfLife, field6=numGammas
-            halfLife = field5;
-            numGammas = static_cast<int>(field6);
+            // Check if field5 is a small integer (likely numGammas, not halfLife)
+            if (field5 == static_cast<int>(field5) && field5 < 100 && lvl > 0) {
+                // Small integer in field5: interpret as numGammas, field6 is something else
+                halfLife = constants::DEFAULT_MAX_HALFLIFE;
+                numGammas = static_cast<int>(field5);
+                std::cout << "  Level " << lvl << ": half-life missing (field5 is small integer), using default\n";
+            } else {
+                // Normal case: field5=halfLife, field6=numGammas
+                halfLife = field5;
+                numGammas = static_cast<int>(field6);
+            }
         } else if (hasField5 && !hasField6) {
             // Only one field: must be numGammas, halfLife is missing
             halfLife = constants::DEFAULT_MAX_HALFLIFE;
             numGammas = static_cast<int>(field5);
             std::cout << "  Level " << lvl << ": half-life missing, using default\n";
-        } else {
+        }
+        else {
             // No additional fields - ground state or bad format
             if (lvl == 0) {
                 // Ground state: stable, no gammas
@@ -121,11 +131,25 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
                      << "Expected " << lvl << " but got " << levelNum << std::endl;
         }
 
-        // Convert parity: -1 for unknown → 0 (negative)
-        if (parity == -1) {
+        
+        std::cout << "  Level " << lvl << ": read levelNum=" << levelNum
+                  << ", energy=" << energy << ", spin=" << spin
+                  << ", parity=" << parity <<  "NofGammas " << numGammas <<  std::endl;
+        
+        // Convert parity: file format 0=unknown, +1=positive, -1=negative
+        //                 internal format 1=positive, 0=negative
+        if (parity == 0) {
+            // Unknown parity - randomly assign to positive or negative with equal probability
+            static TRandom2 parityRNG(42);  // Fixed seed for reproducibility
+            parity = parityRNG.Integer(2);  // Returns 0 or 1 with equal probability
+            std::cout << "  Level " << lvl << ": unknown parity, randomly assigned to "
+                      << (parity == 1 ? "positive" : "negative") << std::endl;
+        } else if (parity == -1) {
+            // Negative parity in file → 0 in internal representation
             parity = 0;
-            std::cerr << "Warning: Unknown parity for level " << lvl 
-                     << ", assuming negative (0)" << std::endl;
+        } else if (parity == 1) {
+            // Positive parity in file → stays 1 in internal representation
+            // (no change needed, but included for clarity)
         }
 
         // Convert half-life to femtoseconds

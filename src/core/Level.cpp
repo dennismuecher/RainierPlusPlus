@@ -6,6 +6,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 namespace rainier {
 
@@ -16,14 +17,15 @@ Level::Level(double energy, double spin, int parity)
     if (energy < 0.0) {
         throw std::invalid_argument("Energy must be non-negative");
     }
+    // Allow spin < 0 (means unknown), but note it for spin bin calculation
     if (spin < 0.0) {
-        throw std::invalid_argument("Spin must be non-negative");
+        spinBin_ = -1;  // Mark as invalid spin bin
+    } else {
+        spinBin_ = static_cast<int>(spin);
     }
     if (parity != 0 && parity != 1) {
         throw std::invalid_argument("Parity must be 0 or 1");
     }
-    
-    spinBin_ = static_cast<int>(spin);
 }
 
 double Level::getLifetime() const {

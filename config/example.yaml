@@ -64,7 +64,7 @@ initialExcitation:
 # Available models: BSFG, CTM, TABLE, USER_DEFINED
 
 levelDensity:
-  model: BSFG                        # Choose level density model
+  model: CTM                       # Choose level density model
 
   # ---------------------------------------------------------------------------
   # BSFG (Back-Shifted Fermi Gas) parameters
@@ -109,7 +109,7 @@ spinCutoff:
     
   # Oslo energy shift (optional, applies to any model)
     useOsloShift: false              # Enable Oslo-style shift
-    osloShift: 0.12                  # Energy shift for spin cutoff (MeV)
+    osloShift: 0.0                  # Energy shift for spin cutoff (MeV)
 
   # Note: VON_EGIDY models require no parameters
   # Note: USER_DEFINED model allows custom formulas (not yet implemented)

@@ -99,8 +99,8 @@ Config Config::loadFromFile(const std::string& filename) {
                 if (model == "BSFG") 
                     config.levelDensity.model = Config::LevelDensityConfig::Model::BSFG;
                 else if (model == "CTM") 
-                    config.levelDensity.model = Config::LevelDensityConfig::Model::CTM;
-                else if (model == "TABLE") 
+                    config.levelDensity.model = Config::LevelDensityConfig::Model::CTM;                }
+                else if (model == "TABLE")
                     config.levelDensity.model = Config::LevelDensityConfig::Model::TABLE;
                 else if (model == "USER_DEFINED") 
                     config.levelDensity.model = Config::LevelDensityConfig::Model::USER_DEFINED;

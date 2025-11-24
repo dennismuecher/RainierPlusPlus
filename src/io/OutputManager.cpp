@@ -371,6 +371,7 @@ void OutputManager::fillLevelDensityHistograms(int realization, const DecaySimul
                 // Sum both parities (assuming equal distribution)
                 for (int parity = 0; parity <= 1; ++parity) {
                     double density = levelDensity.getDensity(energy, spin, parity);
+                    //std::cout <<"Level density for energy" <<energy<< " and spin " << spin << " is " <<density << std::endl;
                     totalDensity += density;
                 }
             }
