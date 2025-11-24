@@ -91,21 +91,34 @@ private:
 
 namespace rainier {
 
+
 DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int realization)
     : nucleus_(nucleus), config_(config), realization_(realization), numStuckEvents_(0) {
         std::cout << "  DecaySimulator entered" << std::endl;
 
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
-    levelDensity_ = std::make_unique<BackShiftedFermiGas>(
-        config.levelDensity.a, config.levelDensity.E1,
-        config.levelDensity.useEnergyDependentA,
-        config.levelDensity.aAsymptotic,
-        config.levelDensity.shellCorrectionW,
-        config.levelDensity.dampingGamma,
-        nucleus.getA()
-    );
-    
+        // Create level density model based on config
+            if (config.levelDensity.model == Config::LevelDensityConfig::Model::BSFG) {
+                levelDensity_ = std::make_unique<BackShiftedFermiGas>(
+                    config.levelDensity.a, config.levelDensity.E1,
+                    config.levelDensity.useEnergyDependentA,
+                    config.levelDensity.aAsymptotic,
+                    config.levelDensity.shellCorrectionW,
+                    config.levelDensity.dampingGamma,
+                    nucleus.getA()
+                );
+            }
+            else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
+                levelDensity_ = std::make_unique<ConstantTemperature>(
+                    config.levelDensity.T,
+                    config.levelDensity.E0
+                );
+            }
+            else {
+                throw std::runtime_error("Unsupported level density model");
+            }
+        
         // Create spin cutoff model based on config
         if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
             spinCutoff_ = std::make_unique<VonEgidy05>(
