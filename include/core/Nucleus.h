@@ -4,6 +4,9 @@
 
 #include "DiscreteLevel.h"
 #include "ContinuumLevel.h"
+#include "models/LevelDensity.h"
+#include "models/SpinCutoff.h"
+
 #include <vector>
 #include <memory>
 #include <map>
@@ -26,7 +29,7 @@ public:
      * @param Z Atomic number (protons)
      * @param A Mass number (protons + neutrons)
      */
-    Nucleus(int Z, int A);
+    Nucleus(int Z, int A, const Config& config);
 
     // Basic properties
     int getZ() const { return Z_; }
@@ -72,6 +75,20 @@ public:
         return discreteLevels_;
     }
 
+    /**
+    * @brief Get level density model
+    */
+    const LevelDensityModel* getLevelDensityModel() const {
+        return levelDensity_.get();
+    }
+    
+    /**
+    * @brief Get spin cutoff model
+    */
+    const SpinCutoffModel* getSpinCutoffModel() const {
+        return spinCutoff_.get();
+    }
+            
     // Access continuum levels
     int getNumContinuumLevels() const { return totalContinuumLevels_; }
     
@@ -124,6 +141,20 @@ public:
      */
     void setSn(double Sn) { Sn_ = Sn; }
     double getSn() const { return Sn_; }
+    
+    /**
+         * @brief Set level density model for continuum construction
+         */
+        void setLevelDensityModel(const LevelDensityModel* model) {
+            levelDensity_ = model;
+        }
+        
+        /**
+         * @brief Set spin cutoff model for continuum construction
+         */
+        void setSpinCutoffModel(const SpinCutoffModel* model) {
+            spinCutoff_ = model;
+        }
 
 private:
     // Index for continuum level storage: maps (energyBin, spinBin, parity) to vector of levels
@@ -146,10 +177,14 @@ private:
     double energySpacing_;     // Spacing between energy bins (MeV)
     int numEnergyBins_;        // Number of continuum energy bins
     
+    
+    // Level density models (owning pointers)
+       std::unique_ptr<LevelDensityModel> levelDensity_;
+       std::unique_ptr<SpinCutoffModel> spinCutoff_;
+    
     // Helper methods
-    void buildPoissonLevels(const Config& config, int realization);
-    void buildWignerLevels(const Config& config, int realization);
-	double estimateLevelDensity(double energy, double spin, int parity) const;
+    void buildPoissonLevels(int realization);
+    void buildWignerLevels(int realization);
 };
 
 } // namespace rainier

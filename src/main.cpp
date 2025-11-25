@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
         
         // Initialize nucleus
         std::cout << "\n═══ Initializing Nucleus ═══\n";
-        Nucleus nucleus(config.nucleus.Z, config.nucleus.A);
+        Nucleus nucleus(config.nucleus.Z, config.nucleus.A, config);
         nucleus.setSn(config.nucleus.Sn);
         
         // Load discrete levels from file

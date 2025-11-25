@@ -89,8 +89,10 @@ private:
     int realization_;
     
     std::unique_ptr<TRandom2> rng_;
-    std::unique_ptr<LevelDensityModel> levelDensity_;
-    std::unique_ptr<SpinCutoffModel> spinCutoff_;
+    
+    const LevelDensityModel* levelDensity_;
+    const SpinCutoffModel* spinCutoff_;
+
     std::unique_ptr<CombinedStrength> gammaStrength_;
     
     std::vector<CascadeEvent> events_;

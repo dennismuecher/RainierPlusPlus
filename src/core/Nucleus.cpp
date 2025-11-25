@@ -12,10 +12,11 @@
 
 namespace rainier {
 
-Nucleus::Nucleus(int Z, int A) 
+Nucleus::Nucleus(int Z, int A, const Config& config)
     : Z_(Z), A_(A), Sn_(0.0), criticalEnergy_(0.0),
       totalContinuumLevels_(0), maxSpinBin_(20),  // Reasonable default
-      maxEnergy_(10.0), energySpacing_(0.1), numEnergyBins_(0) {
+      maxEnergy_(10.0), energySpacing_(0.1), numEnergyBins_(0),
+    levelDensity_(nullptr), spinCutoff_(nullptr) {
     
     if (Z <= 0 || A <= 0) {
         throw std::invalid_argument("Z and A must be positive");
@@ -23,6 +24,65 @@ Nucleus::Nucleus(int Z, int A)
     if (Z > A) {
         throw std::invalid_argument("Z cannot exceed A");
     }
+        // Create level density model based on config
+            if (config.levelDensity.model == Config::LevelDensityConfig::Model::BSFG) {
+                levelDensity_ = std::make_unique<BackShiftedFermiGas>(
+                    config.levelDensity.a, config.levelDensity.E1,
+                    config.levelDensity.useEnergyDependentA,
+                    config.levelDensity.aAsymptotic,
+                    config.levelDensity.shellCorrectionW,
+                    config.levelDensity.dampingGamma,
+                    nucleus.getA()
+                );
+            }
+        
+            else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
+                levelDensity_ = std::make_unique<ConstantTemperature>(
+                    config.levelDensity.T,
+                    config.levelDensity.E0,
+                     config.nucleus.A,
+                    config.nucleus.Z
+                );
+            }
+            else {
+                throw std::runtime_error("Unsupported level density model");
+            }
+        
+        // Create spin cutoff model based on config
+        if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
+            spinCutoff_ = std::make_unique<VonEgidy05>(
+                levelDensity_,
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
+            spinCutoff_ = std::make_unique<SingleParticle>(
+                levelDensity_,
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
+            spinCutoff_ = std::make_unique<RigidSphere>(
+                levelDensity_,
+                nucleus.getA(),
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+       
+        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
+            spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
+                levelDensity_,
+                nucleus.getA(),
+                nucleus.getSn(),
+                config.spinCutoff.spinCutoffD,
+                config.spinCutoff.Ed,
+                config.levelDensity.aAsymptotic,
+                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+            );
+        }
+        
 }
 
 void Nucleus::loadDiscreteLevels(const std::string& filename, int maxLevels) {
@@ -45,6 +105,8 @@ void Nucleus::loadDiscreteLevels(const std::string& filename, int maxLevels) {
 }
 
 void Nucleus::buildContinuumLevels(const Config& config, int realization) {
+    
+    
     std::cout << "Building continuum levels (realization " << realization << ")..." << std::endl;
     
     // Clear previous continuum levels
@@ -75,18 +137,12 @@ void Nucleus::buildContinuumLevels(const Config& config, int realization) {
     std::cout << "  Total continuum levels: " << totalContinuumLevels_ << std::endl;
 }
 
-void Nucleus::buildPoissonLevels(const Config& config, int realization) {
+void Nucleus::buildPoissonLevels(int realization) {
     // Poisson distribution for level spacings
     // Each E-J-π bin gets a random number of levels from Poisson distribution
     // based on the average level density
-    
-    (void)config; // Unused for now - will use when level density models integrated
-    
+        
     TRandom2 rng(1 + realization);  // Seed with realization number
-    
-    // We need level density and spin cutoff models to calculate average number of levels
-    // For now, use a simple approximation
-    // TODO: Use actual level density model once implemented
     
     int maxLevelsInBin = 0;
     
@@ -97,11 +153,9 @@ void Nucleus::buildPoissonLevels(const Config& config, int realization) {
             for (int par = 0; par < 2; ++par) {
                 double spin = Level::binToSpin(spb, isEvenA());
                 
-                // Simple level density estimate (will be replaced with proper model)
-                // ρ(E,J,π) ≈ ρ_total(E) × P(J) × P(π)
-                // For now, use a crude approximation
-                double avgLevels = this->estimateLevelDensity(binCenterEnergy, spin, par) 
-                                 * energySpacing_;
+            
+                double density = levelDensity_->getDensity(binCenterEnergy, spin, par);
+                double avgLevels = density * energySpacing_;
                 
                 if (avgLevels < 0.01) avgLevels = 0.01;  // Minimum for Poisson
                 
@@ -136,13 +190,12 @@ void Nucleus::buildPoissonLevels(const Config& config, int realization) {
     std::cout << "  Maximum levels in any bin: " << maxLevelsInBin << std::endl;
 }
 
-void Nucleus::buildWignerLevels(const Config& config, int realization) {
+void Nucleus::buildWignerLevels(int realization) {
     // Wigner distribution for level spacings
     // Levels are distributed according to Wigner spacing distribution:
     // P(s) = (π/2) s exp(-πs²/4)
     // where s is the spacing in units of mean spacing
     
-    (void)config; // Unused for now - will use when level density models integrated
     
     TRandom2 rng(1 + realization);
     
@@ -155,8 +208,7 @@ void Nucleus::buildWignerLevels(const Config& config, int realization) {
             std::vector<double> expectedCumulative(numEnergyBins_);
             for (int ex = 0; ex < numEnergyBins_; ++ex) {
                 double binCenterEnergy = criticalEnergy_ + (ex + 0.5) * energySpacing_;
-                double density = this->estimateLevelDensity(binCenterEnergy, spin, par);
-                
+                double density = levelDensity_->getDensity(binCenterEnergy, spin, par);
                 if (ex == 0) {
                     expectedCumulative[ex] = density * energySpacing_;
                 } else {
@@ -201,39 +253,6 @@ void Nucleus::buildWignerLevels(const Config& config, int realization) {
     }
 }
 
-double Nucleus::estimateLevelDensity(double energy, double spin, int parity) const {
-    // Simple estimate for level density used during continuum construction
-    // This is a simplified BSFG model - the full simulation will use
-    // the proper LevelDensityModel classes
-    
-    if (energy < criticalEnergy_) {
-        return 0.0;
-    }
-    
-    // Simple BSFG approximation matching original RAINIER physics
-    double U = energy - 1.0;  // Effective excitation energy (E - E1)
-    if (U < 0.1) U = 0.1;
-    
-    double a = A_ / 8.0;  // Level density parameter (A/8 is typical)
-    
-    // Spin cutoff parameter (Von Egidy formula)
-    double sigma2 = 0.0146 * std::pow(A_, 5.0/3.0) * 
-                   (1.0 + std::sqrt(1.0 + 4.0 * a * U)) / (2.0 * a);
-    
-    // Total density (BSFG formula)
-    double rhoTotal = std::exp(2.0 * std::sqrt(a * U)) / 
-                     (12.0 * std::sqrt(2.0 * sigma2) * std::pow(a, 0.25) * std::pow(U, 1.25));
-    
-    // Spin distribution
-    double spinFactor = (2.0 * spin + 1.0) * 
-                       std::exp(-(spin + 0.5) * (spin + 0.5) / (2.0 * sigma2)) / 
-                       sigma2;
-    
-    // Parity distribution (equipartition)
-    double parityFactor = 0.5;
-    
-    return rhoTotal * spinFactor * parityFactor;
-}
 
 std::shared_ptr<DiscreteLevel> Nucleus::getDiscreteLevel(int index) const {
     if (index < 0 || index >= static_cast<int>(discreteLevels_.size())) {

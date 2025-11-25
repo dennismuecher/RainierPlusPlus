@@ -98,64 +98,8 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
 
     rng_ = std::make_unique<TRandom2>(1 + realization + config.simulation.randomSeed);
     
-        // Create level density model based on config
-            if (config.levelDensity.model == Config::LevelDensityConfig::Model::BSFG) {
-                levelDensity_ = std::make_unique<BackShiftedFermiGas>(
-                    config.levelDensity.a, config.levelDensity.E1,
-                    config.levelDensity.useEnergyDependentA,
-                    config.levelDensity.aAsymptotic,
-                    config.levelDensity.shellCorrectionW,
-                    config.levelDensity.dampingGamma,
-                    nucleus.getA()
-                );
-            }
-        
-            else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
-                levelDensity_ = std::make_unique<ConstantTemperature>(
-                    config.levelDensity.T,
-                    config.levelDensity.E0,
-                     config.nucleus.A,
-                    config.nucleus.Z
-                );
-            }
-            else {
-                throw std::runtime_error("Unsupported level density model");
-            }
-        
-        // Create spin cutoff model based on config
-        if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
-            spinCutoff_ = std::make_unique<VonEgidy05>(
-                levelDensity_.get(),
-                nucleus.getA(),
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
-            spinCutoff_ = std::make_unique<SingleParticle>(
-                levelDensity_.get(),
-                nucleus.getA(),
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
-            spinCutoff_ = std::make_unique<RigidSphere>(
-                levelDensity_.get(),
-                nucleus.getA(),
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-       
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
-            spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
-                levelDensity_.get(),
-                nucleus.getA(),
-                nucleus.getSn(),
-                config.spinCutoff.spinCutoffD,
-                config.spinCutoff.Ed,
-                config.levelDensity.aAsymptotic,
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
+    levelDensity_ = nucleus.getLevelDensityModel();
+    spinCutoff_ = nucleus.getSpinCutoffModel();
         
     std::vector<Resonance> e1Resonances;
     for (const auto& r : config.gammaStrength.e1Resonances) {
