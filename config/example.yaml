@@ -82,10 +82,15 @@ levelDensity:
   # CTM (Constant Temperature Model) parameters
   # ---------------------------------------------------------------------------
   CTM:
-    T: 0.639                           # Nuclear temperature (MeV)
-    E0: 0.059                          # Energy shift (MeV)
+    T: 0.0                           # Nuclear temperature (MeV)
+                                    # Set both T and E0 to 0.0 to auto-calculate
+                                    # using von Egidy & Bucurescu (2009) systematics
+    E0: 0.0                          # Energy shift (MeV)
     # Formula: ρ(E) ∝ exp((E-E0)/T)
-
+    # Auto-calculation uses:
+    #   T  = A^(-2/3) / (0.0597 + 0.00198 * S')
+    #   E0 = -1.004 + 0.5 * Pa'
+    
   # ---------------------------------------------------------------------------
   # TABLE parameters: Read from file
   # ---------------------------------------------------------------------------

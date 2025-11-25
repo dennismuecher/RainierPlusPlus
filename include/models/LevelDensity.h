@@ -78,9 +78,11 @@ private:
  * ρ(E) = exp(U/T) / T
  * where U = E - E0
  */
+
 class ConstantTemperature : public LevelDensityModel {
 public:
-    ConstantTemperature(double T, double E0);
+    // Modified constructor to accept nucleus parameters
+    ConstantTemperature(double T, double E0, int A, int Z);
 
     double getDensity(double Ex) const override;
     double getDensity(double Ex, double spin, int parity) const override;

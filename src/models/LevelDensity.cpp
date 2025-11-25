@@ -7,6 +7,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
+#include "utils/NLDSystematics.h"
 
 namespace rainier {
 
@@ -132,13 +133,30 @@ double BackShiftedFermiGas::getDensity(double Ex, double spin, int parity) const
 // Constant Temperature Model (CTM)
 // ============================================================================
 
-ConstantTemperature::ConstantTemperature(double T, double E0)
+
+ConstantTemperature::ConstantTemperature(double T, double E0, int A, int Z)
     : T_(T),
       E0_(E0) {
     
-    std::cout << "Initialized CTM level density model:" << std::endl;
-    std::cout << "  T = " << T_ << " MeV" << std::endl;
-    std::cout << "  E0 = " << E0_ << " MeV" << std::endl;
+    // If both T and E0 are zero, calculate defaults using von Egidy & Bucurescu systematics
+    if (std::abs(T_) < 1e-6 && std::abs(E0_) < 1e-6) {
+        std::cout << "\n╔═══════════════════════════════════════════════════╗\n";
+        std::cout << "║ Calculating CTM defaults from von Egidy & Bucurescu ║\n";
+        std::cout << "╚═══════════════════════════════════════════════════╝\n";
+        
+        double sigma;  // Not used in constructor but calculated for reference
+        NLDSystematics::calculateAllCTMParameters(A, Z, 0.0, 0.0, T_, E0_, sigma);
+        
+        std::cout << "\n═══ Calculated CTM Parameters ═══\n";
+        std::cout << "  T  = " << T_ << " MeV (nuclear temperature)\n";
+        std::cout << "  E0 = " << E0_ << " MeV (energy shift)\n";
+        std::cout << "  σ  = " << sigma << " (spin cutoff parameter)\n";
+        std::cout << "════════════════════════════════════\n\n";
+    } else {
+        std::cout << "Initialized CTM level density model:" << std::endl;
+        std::cout << "  T = " << T_ << " MeV" << std::endl;
+        std::cout << "  E0 = " << E0_ << " MeV" << std::endl;
+    }
 }
 
 double ConstantTemperature::getEffectiveEnergy(double Ex) const {

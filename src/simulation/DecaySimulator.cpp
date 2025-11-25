@@ -109,10 +109,13 @@ DecaySimulator::DecaySimulator(Nucleus& nucleus, const Config& config, int reali
                     nucleus.getA()
                 );
             }
+        
             else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
                 levelDensity_ = std::make_unique<ConstantTemperature>(
                     config.levelDensity.T,
-                    config.levelDensity.E0
+                    config.levelDensity.E0,
+                     config.nucleus.A,
+                    config.nucleus.Z
                 );
             }
             else {

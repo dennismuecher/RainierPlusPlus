@@ -39,6 +39,7 @@ set(SOURCES
     src/simulation/CascadeEvent.cpp
     src/simulation/DecaySimulator.cpp
     src/io/OutputManager.cpp
+    src/utils/NLDSystematics.cpp
 )
 
 # Header files
