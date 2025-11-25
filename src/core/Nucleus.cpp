@@ -51,21 +51,21 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
         // Create spin cutoff model based on config
         if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
             spinCutoff_ = std::make_unique<VonEgidy05>(
-                levelDensity_,
+                levelDensity_.get(),
                 A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
             spinCutoff_ = std::make_unique<SingleParticle>(
-                levelDensity_,
+                levelDensity_.get(),
                 A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
             spinCutoff_ = std::make_unique<RigidSphere>(
-                levelDensity_,
+                levelDensity_.get(),
                 A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
@@ -73,9 +73,9 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
        
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
             spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
-                levelDensity_,
-                A_
-                Sn_
+                levelDensity_.get(),
+                A_,
+                Sn_,
                 config.spinCutoff.spinCutoffD,
                 config.spinCutoff.Ed,
                 config.levelDensity.aAsymptotic,
@@ -129,9 +129,9 @@ void Nucleus::buildContinuumLevels(const Config& config, int realization) {
     
     // Build levels according to distribution type
     if (config.continuum.distribution == Config::ContinuumConfig::Distribution::POISSON) {
-        buildPoissonLevels(config, realization);
+        buildPoissonLevels(realization);
     } else {
-        buildWignerLevels(config, realization);
+        buildWignerLevels(realization);
     }
     
     std::cout << "  Total continuum levels: " << totalContinuumLevels_ << std::endl;
