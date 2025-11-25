@@ -169,6 +169,19 @@ double ConstantTemperature::getEffectiveEnergy(double Ex) const {
     return U;
 }
 
+double ConstantTemperature::getLevelDensityParameter(double Ex) const {
+    // For CTM, estimate 'a' from temperature
+    // Relation: T ≈ √(U/a) → a ≈ U/T²
+    double U = getEffectiveEnergy(Ex);
+    double a = U / (T_ * T_);
+    
+    // Apply reasonable bounds
+    if (a < 1.0) a = 1.0;      // Minimum
+    if (a > 30.0) a = 30.0;    // Maximum
+    
+    return a;
+}
+
 double ConstantTemperature::getDensity(double Ex) const {
     // Total level density
     // ρ(E) = exp(U/T) / T

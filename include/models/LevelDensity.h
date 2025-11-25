@@ -19,11 +19,20 @@ class LevelDensityModel {
 public:
     virtual ~LevelDensityModel() = default;
 
+    
+    /**
+        * @brief Get level density parameter 'a'
+        * Used by spin cutoff models
+        */
+    virtual double getLevelDensityParameter(double Ex) const = 0;
+
     /**
      * @brief Calculate total level density at excitation energy
      * @param Ex Excitation energy (MeV)
      * @return Total density (MeV^-1)
      */
+    
+    
     virtual double getDensity(double Ex) const = 0;
 
     /**
@@ -87,7 +96,7 @@ public:
     double getDensity(double Ex) const override;
     double getDensity(double Ex, double spin, int parity) const override;
     double getEffectiveEnergy(double Ex) const override;
-
+    double getLevelDensityParameter(double Ex) const override;
 private:
     double T_;   // Nuclear temperature (MeV)
     double E0_;  // Energy shift (MeV)

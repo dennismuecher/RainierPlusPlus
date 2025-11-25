@@ -10,8 +10,9 @@ namespace rainier {
 
 class ContinuumLevel : public Level {
 public:
-    ContinuumLevel(double energy, double spin, int parity, 
-                   int energyBin, int levelInBin);
+    
+    ContinuumLevel(double energy, double spin, int parity,
+                   int energyBin, int spinBin, int levelInBin);
     
     double getTotalWidth() const override { return totalWidth_; }
     const std::vector<std::shared_ptr<Transition>>& getTransitions() const override {
@@ -25,13 +26,18 @@ public:
     
     int getEnergyBin() const { return energyBin_; }
     int getLevelInBin() const { return levelInBin_; }
-    
+    int getSpinBin() const { return spinBin_; }
+
+ 
     void clearTransitions() { transitions_.clear(); totalWidth_ = 0.0; }
 
 private:
     double totalWidth_;
     int energyBin_;
+    int spinBin_;
     int levelInBin_;
+    
+    
     std::vector<std::shared_ptr<Transition>> transitions_;
 };
 

@@ -90,9 +90,9 @@ void DiscreteLevel::normalizeBranchingRatios() {
 
 // ===== ContinuumLevel =====
 ContinuumLevel::ContinuumLevel(double energy, double spin, int parity,
-                               int energyBin, int levelInBin)
-    : Level(energy, spin, parity), 
-      totalWidth_(0.0), energyBin_(energyBin), levelInBin_(levelInBin) {
+                               int energyBin, int spinBin, int levelInBin)
+    : Level(energy, spin, parity),
+      totalWidth_(0.0), energyBin_(energyBin), spinBin_(spinBin), levelInBin_(levelInBin) {
 }
 
 double ContinuumLevel::getHalfLife() const {

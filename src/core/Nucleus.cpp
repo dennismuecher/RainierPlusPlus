@@ -41,7 +41,7 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
                     config.levelDensity.T,
                     config.levelDensity.E0,
                      A_,
-                    Z
+                    Z_
                 );
             }
             else {
@@ -135,6 +135,24 @@ void Nucleus::buildContinuumLevels(const Config& config, int realization) {
     }
     
     std::cout << "  Total continuum levels: " << totalContinuumLevels_ << std::endl;
+    // Debug: Print first few levels for each bin
+    std::cout << "  Debug: Checking first bins..." << std::endl;
+    for (int ex = 0; ex < std::min(3, numEnergyBins_); ++ex) {
+        for (int spb = 0; spb < std::min(20, maxSpinBin_); ++spb) {
+            for (int par = 0; par < 2; ++par) {
+                const auto& levels = getContinuumLevels(ex, spb, par);
+                if (!levels.empty()) {
+                    std::cout << "    Bin (ex=" << ex << ", spb=" << spb << ", par=" << par
+                             << "): " << levels.size() << " levels" << std::endl;
+                    // Print first few levels
+                    for (size_t i = 0; i < std::min(size_t(5), levels.size()); ++i) {
+                        std::cout << "      Level " << i << ": E=" << levels[i]->getEnergy()
+                                 << " MeV, J=" << levels[i]->getSpin() << std::endl;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Nucleus::buildPoissonLevels(int realization) {
@@ -174,7 +192,7 @@ void Nucleus::buildPoissonLevels(int realization) {
                                   rng.Uniform(-energySpacing_/2.0, energySpacing_/2.0);
                     
                     auto level = std::make_shared<ContinuumLevel>(
-                        energy, spin, par, ex, lvl);
+                        energy, spin, par, ex, spb, lvl);
                     
                     binLevels.push_back(level);
                     totalContinuumLevels_++;
@@ -234,7 +252,7 @@ void Nucleus::buildWignerLevels(int realization) {
                                   rng.Uniform(-energySpacing_/2.0, energySpacing_/2.0);
                     
                     auto level = std::make_shared<ContinuumLevel>(
-                        energy, spin, par, ex, levelInBin);
+                        energy, spin, par, ex, spb, levelInBin);
                     
                     binLevels.push_back(level);
                     levelInBin++;

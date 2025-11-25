@@ -32,23 +32,17 @@ VonEgidy05::VonEgidy05(const LevelDensityModel* densityModel, int A, double oslo
     : densityModel_(densityModel), A_(A), osloShift_(osloShift) {
 }
 
-
 double VonEgidy05::getSigmaSquared(double Ex) const {
     // Von Egidy & Bucurescu, PRC 72, 044311 (2005)
     // Original RAINIER lines 233-236
     // σ² = 0.0146 A^(5/3) [1 + √(1 + 4aU)] / (2a)
     
-    double shiftedEx = Ex - osloShift_;  // Apply Oslo shift
-    if (shiftedEx < 0.0) shiftedEx = 1e-8;  // Safety check
+    double shiftedEx = Ex - osloShift_;
+    if (shiftedEx < 0.0) shiftedEx = 1e-8;
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     
-    // Get level density parameter - need to cast to access method
-    const auto* bsfg = dynamic_cast<const BackShiftedFermiGas*>(densityModel_);
-    double a = 15.0; // Default
-    if (bsfg) {
-        a = bsfg->getLevelDensityParameter(Ex);
-    }
+    double a = densityModel_->getLevelDensityParameter(Ex);
     
     double A_factor = 0.0146 * std::pow(A_, 5.0/3.0);
     double sigma2 = A_factor * (1.0 + std::sqrt(1.0 + 4.0 * a * U)) / (2.0 * a);
@@ -82,21 +76,16 @@ double TALYSSpinCutoff::getSigmaSquared(double Ex) const {
     
     // Calculate dEff and dLDa using shifted Ex (matches original RAINIER)
     double U = densityModel_->getEffectiveEnergy(shiftedEx);
-    const auto* bsfg = dynamic_cast<const BackShiftedFermiGas*>(densityModel_);
-    double a = 15.0;
-    if (bsfg) {
-        a = bsfg->getLevelDensityParameter(shiftedEx);
-    }
+   
+    double a = densityModel_->getLevelDensityParameter(Ex);
     
     // Calculate sigma at Sn using shifted Sn
     double shiftedSn = Sn_ - osloShift_;
     if (shiftedSn < 0.0) shiftedSn = 1e-8;
     
     double U_Sn = densityModel_->getEffectiveEnergy(shiftedSn);
-    double a_Sn = 15.0;
-    if (bsfg) {
-        a_Sn = bsfg->getLevelDensityParameter(shiftedSn);
-    }
+    double a_Sn = densityModel_->getLevelDensityParameter(shiftedSn);
+    
     
     double spinCutoffSn2 = 0.01389 * std::pow(A_, 5.0/3.0) / aAsymptotic_ *
                           std::sqrt(a_Sn * U_Sn);
@@ -132,11 +121,7 @@ double SingleParticle::getSigmaSquared(double Ex) const {
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     
-    const auto* bsfg = dynamic_cast<const BackShiftedFermiGas*>(densityModel_);
-    double a = 15.0;
-    if (bsfg) {
-        a = bsfg->getLevelDensityParameter(Ex);
-    }
+    double a = densityModel_->getLevelDensityParameter(Ex);
     
     double sigma2 = 0.1461 * std::sqrt(a * U) * std::pow(A_, 2.0/3.0);
     
@@ -161,11 +146,8 @@ double RigidSphere::getSigmaSquared(double Ex) const {
     
     double U = densityModel_->getEffectiveEnergy(Ex);
     
-    const auto* bsfg = dynamic_cast<const BackShiftedFermiGas*>(densityModel_);
-    double a = 15.0;
-    if (bsfg) {
-        a = bsfg->getLevelDensityParameter(Ex);
-    }
+    double a = densityModel_->getLevelDensityParameter(Ex);
+    
     
     double sigma2 = 0.0145 * std::sqrt(U / a) * std::pow(A_, 5.0/3.0);
     
