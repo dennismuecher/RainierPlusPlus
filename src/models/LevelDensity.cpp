@@ -14,18 +14,12 @@ namespace rainier {
 // ============================================================================
 // Back-Shifted Fermi Gas (BSFG) Model
 // ============================================================================
-
-BackShiftedFermiGas::BackShiftedFermiGas(
-    double a, double E1, bool useEnergyDependent,
-    double aAsymptotic, double shellCorrection,
-    double dampingGamma, int A)
-    : a_(a),
-      E1_(E1),
-      useEnergyDependent_(useEnergyDependent),
-      aAsymptotic_(aAsymptotic),
-      shellCorrection_(shellCorrection),
-      dampingGamma_(dampingGamma),
-      A_(A) {
+BackShiftedFermiGas::BackShiftedFermiGas(double a, double E1, bool useEnergyDependent,
+                                         double aAsymptotic, double shellCorrection,
+                                         double dampingGamma, int A)
+    : a_(a), E1_(E1), useEnergyDependent_(useEnergyDependent),
+      aAsymptotic_(aAsymptotic), shellCorrection_(shellCorrection),
+      dampingGamma_(dampingGamma), A_(A), spinCutoff_(nullptr) {
     
     std::cout << "Initialized BSFG level density model:" << std::endl;
     std::cout << "  a = " << a_ << " MeV^-1" << std::endl;
@@ -36,6 +30,10 @@ BackShiftedFermiGas::BackShiftedFermiGas(
         std::cout << "  Shell correction W = " << shellCorrection_ << " MeV" << std::endl;
         std::cout << "  Damping γ = " << dampingGamma_ << " MeV^-1" << std::endl;
     }
+}
+
+void BackShiftedFermiGas::setSpinCutoffModel(const SpinCutoffModel* spinCutoff) {
+    spinCutoff_ = spinCutoff;
 }
 
 double BackShiftedFermiGas::getEffectiveEnergy(double Ex) const {
@@ -63,6 +61,7 @@ double BackShiftedFermiGas::getLevelDensityParameter(double Ex) const {
     
     return a_E;
 }
+
 
 double BackShiftedFermiGas::getDensity(double Ex) const {
     // Total level density (summed over all J and π)
@@ -94,31 +93,28 @@ double BackShiftedFermiGas::getDensity(double Ex) const {
 }
 
 double BackShiftedFermiGas::getDensity(double Ex, double spin, int parity) const {
-    // Level density for specific spin and parity
-    // ρ(E,J,π) = ρ_total(E) × P(J) × P(π)
-    // Original RAINIER lines 296-324
-    
     (void)parity; // Will be used when parity model integrated
     
     double rhoTotal = getDensity(Ex);
     
-    // Spin distribution factor
-    // P(J) = (2J+1)/σ² × exp(-(J+1/2)²/(2σ²))
-    double U = getEffectiveEnergy(Ex);
-    double a = getLevelDensityParameter(Ex);
+    // Use spin cutoff model if available, otherwise use approximation
+    double spinFactor;
+    if (spinCutoff_) {
+        spinFactor = spinCutoff_->getSpinDistribution(Ex, spin);
+    } else {
+        // Fallback: Von Egidy 2005 formula
+        std::cout <<" BSFG Model has no proper spin cutoff model!" <<std::endl;
+
+        double U = getEffectiveEnergy(Ex);
+        double a = getLevelDensityParameter(Ex);
+        double sigma2 = 0.0146 * std::pow(A_, 5.0/3.0) *
+                       (1.0 + std::sqrt(1.0 + 4.0 * a * U)) / (2.0 * a);
+        spinFactor = (2.0 * spin + 1.0) *
+                    std::exp(-std::pow(spin + 0.5, 2) / (2.0 * sigma2)) /
+                    sigma2;
+    }
     
-    // Spin cutoff parameter (Von Egidy 2005 formula)
-    // σ² = 0.0146 A^(5/3) × [1 + √(1 + 4aU)] / (2a)
-    double sigma2 = 0.0146 * std::pow(A_, 5.0/3.0) * 
-                   (1.0 + std::sqrt(1.0 + 4.0 * a * U)) / (2.0 * a);
-    
-    double spinFactor = (2.0 * spin + 1.0) * 
-                       std::exp(-std::pow(spin + 0.5, 2) / (2.0 * sigma2)) / 
-                       sigma2;
-    
-    // Parity distribution (will use proper model from ParityDistribution)
-    // For now, use equipartition
-    double parityFactor = 0.5;
+    double parityFactor = 0.5; // Equipartition
     
     double density = rhoTotal * spinFactor * parityFactor;
     
@@ -129,22 +125,22 @@ double BackShiftedFermiGas::getDensity(double Ex, double spin, int parity) const
     return density;
 }
 
+
 // ============================================================================
 // Constant Temperature Model (CTM)
 // ============================================================================
 
 
 ConstantTemperature::ConstantTemperature(double T, double E0, int A, int Z)
-    : T_(T),
-      E0_(E0) {
-    
+    : T_(T), E0_(E0), spinCutoff_(nullptr) {
     // If both T and E0 are zero, calculate defaults using von Egidy & Bucurescu systematics
+
     if (std::abs(T_) < 1e-6 && std::abs(E0_) < 1e-6) {
         std::cout << "\n╔═══════════════════════════════════════════════════╗\n";
         std::cout << "║ Calculating CTM defaults from von Egidy & Bucurescu ║\n";
         std::cout << "╚═══════════════════════════════════════════════════╝\n";
         
-        double sigma;  // Not used in constructor but calculated for reference
+        double sigma;
         NLDSystematics::calculateAllCTMParameters(A, Z, 0.0, 0.0, T_, E0_, sigma);
         
         std::cout << "\n═══ Calculated CTM Parameters ═══\n";
@@ -157,6 +153,10 @@ ConstantTemperature::ConstantTemperature(double T, double E0, int A, int Z)
         std::cout << "  T = " << T_ << " MeV" << std::endl;
         std::cout << "  E0 = " << E0_ << " MeV" << std::endl;
     }
+}
+
+void ConstantTemperature::setSpinCutoffModel(const SpinCutoffModel* spinCutoff) {
+    spinCutoff_ = spinCutoff;
 }
 
 double ConstantTemperature::getEffectiveEnergy(double Ex) const {
@@ -198,21 +198,24 @@ double ConstantTemperature::getDensity(double Ex) const {
 }
 
 double ConstantTemperature::getDensity(double Ex, double spin, int parity) const {
-    // CTM with spin and parity factors
-    
-    (void)parity; // Will be used when parity model integrated
+    (void)parity;
     
     double rhoTotal = getDensity(Ex);
     
-    // For CTM, we still need spin cutoff
-    // Use a simple approximation based on temperature
-    double sigma2 = T_ * T_;  // Simple approximation
+    // Use spin cutoff model if available
+    double spinFactor;
+    if (spinCutoff_) {
+        spinFactor = spinCutoff_->getSpinDistribution(Ex, spin);
+    } else {
+        // Fallback: simple approximation
+        std::cout <<" ContantTemperature Model has no proper spin cutoff model!" <<std::endl;
+        double sigma2 = T_ * T_;
+        spinFactor = (2.0 * spin + 1.0) *
+                    std::exp(-std::pow(spin + 0.5, 2) / (2.0 * sigma2)) /
+                    sigma2;
+    }
     
-    double spinFactor = (2.0 * spin + 1.0) * 
-                       std::exp(-std::pow(spin + 0.5, 2) / (2.0 * sigma2)) / 
-                       sigma2;
-    
-    double parityFactor = 0.5;  // Equipartition
+    double parityFactor = 0.5;
     
     double density = rhoTotal * spinFactor * parityFactor;
     

@@ -14,9 +14,9 @@ namespace rainier {
 
 Nucleus::Nucleus(int Z, int A, const Config& config)
     : Z_(Z), A_(A), Sn_(0.0), criticalEnergy_(0.0),
-      totalContinuumLevels_(0), maxSpinBin_(20),  // Reasonable default
+      totalContinuumLevels_(0), maxSpinBin_(20),
       maxEnergy_(10.0), energySpacing_(0.1), numEnergyBins_(0),
-    levelDensity_(nullptr), spinCutoff_(nullptr) {
+      levelDensity_(nullptr), spinCutoff_(nullptr) {
     
     if (Z <= 0 || A <= 0) {
         throw std::invalid_argument("Z and A must be positive");
@@ -24,65 +24,66 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
     if (Z > A) {
         throw std::invalid_argument("Z cannot exceed A");
     }
-        // Create level density model based on config
-            if (config.levelDensity.model == Config::LevelDensityConfig::Model::BSFG) {
-                levelDensity_ = std::make_unique<BackShiftedFermiGas>(
-                    config.levelDensity.a, config.levelDensity.E1,
-                    config.levelDensity.useEnergyDependentA,
-                    config.levelDensity.aAsymptotic,
-                    config.levelDensity.shellCorrectionW,
-                    config.levelDensity.dampingGamma,
-                    A_
-                );
-            }
-        
-            else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
-                levelDensity_ = std::make_unique<ConstantTemperature>(
-                    config.levelDensity.T,
-                    config.levelDensity.E0,
-                     A_,
-                    Z_
-                );
-            }
-            else {
-                throw std::runtime_error("Unsupported level density model");
-            }
-        
-        // Create spin cutoff model based on config
-        if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
-            spinCutoff_ = std::make_unique<VonEgidy05>(
-                levelDensity_.get(),
-                A_,
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
-            spinCutoff_ = std::make_unique<SingleParticle>(
-                levelDensity_.get(),
-                A_,
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
-            spinCutoff_ = std::make_unique<RigidSphere>(
-                levelDensity_.get(),
-                A_,
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-       
-        else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
-            spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
-                levelDensity_.get(),
-                A_,
-                Sn_,
-                config.spinCutoff.spinCutoffD,
-                config.spinCutoff.Ed,
-                config.levelDensity.aAsymptotic,
-                config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
-            );
-        }
-        
+    
+    // Create level density model
+    if (config.levelDensity.model == Config::LevelDensityConfig::Model::BSFG) {
+        levelDensity_ = std::make_unique<BackShiftedFermiGas>(
+            config.levelDensity.a, config.levelDensity.E1,
+            config.levelDensity.useEnergyDependentA,
+            config.levelDensity.aAsymptotic,
+            config.levelDensity.shellCorrectionW,
+            config.levelDensity.dampingGamma,
+            A_
+        );
+    }
+    else if (config.levelDensity.model == Config::LevelDensityConfig::Model::CTM) {
+        levelDensity_ = std::make_unique<ConstantTemperature>(
+            config.levelDensity.T,
+            config.levelDensity.E0,
+            A_,
+            Z_
+        );
+    }
+    else {
+        throw std::runtime_error("Unsupported level density model");
+    }
+    
+    // Create spin cutoff model (needs level density)
+    if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
+        spinCutoff_ = std::make_unique<VonEgidy05>(
+            levelDensity_.get(),
+            A_,
+            config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+        );
+    }
+    else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
+        spinCutoff_ = std::make_unique<SingleParticle>(
+            levelDensity_.get(),
+            A_,
+            config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+        );
+    }
+    else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
+        spinCutoff_ = std::make_unique<RigidSphere>(
+            levelDensity_.get(),
+            A_,
+            config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+        );
+    }
+    else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
+        spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
+            levelDensity_.get(),
+            A_,
+            Sn_,
+            config.spinCutoff.spinCutoffD,
+            config.spinCutoff.Ed,
+            config.levelDensity.aAsymptotic,
+            config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
+        );
+    }
+    
+    // Link spin cutoff to level density
+    levelDensity_->setSpinCutoffModel(spinCutoff_.get());
 }
 
 void Nucleus::loadDiscreteLevels(const std::string& filename, int maxLevels) {
