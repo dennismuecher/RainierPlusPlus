@@ -99,7 +99,7 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
                 // Small integer in field5: interpret as numGammas, field6 is something else
                 halfLife = constants::DEFAULT_MAX_HALFLIFE;
                 numGammas = static_cast<int>(field5);
-                std::cout << "  Level " << lvl << ": half-life missing (field5 is small integer), using default\n";
+               // std::cout << "  Level " << lvl << ": half-life missing (field5 is small integer), using default\n";
             } else {
                 // Normal case: field5=halfLife, field6=numGammas
                 halfLife = field5;
@@ -109,7 +109,7 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
             // Only one field: must be numGammas, halfLife is missing
             halfLife = constants::DEFAULT_MAX_HALFLIFE;
             numGammas = static_cast<int>(field5);
-            std::cout << "  Level " << lvl << ": half-life missing, using default\n";
+            //std::cout << "  Level " << lvl << ": half-life missing, using default\n";
         }
         else {
             // No additional fields - ground state or bad format
@@ -130,11 +130,6 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
             std::cerr << "Warning: Level numbering mismatch. " 
                      << "Expected " << lvl << " but got " << levelNum << std::endl;
         }
-
-        
-        std::cout << "  Level " << lvl << ": read levelNum=" << levelNum
-                  << ", energy=" << energy << ", spin=" << spin
-                  << ", parity=" << parity <<  "NofGammas " << numGammas <<  std::endl;
         
         // Convert parity: file format 0=unknown, +1=positive, -1=negative
         //                 internal format 1=positive, 0=negative
@@ -142,8 +137,8 @@ std::vector<LevelFileReader::LevelData> LevelFileReader::readLevelFile(
             // Unknown parity - randomly assign to positive or negative with equal probability
             static TRandom2 parityRNG(42);  // Fixed seed for reproducibility
             parity = parityRNG.Integer(2);  // Returns 0 or 1 with equal probability
-            std::cout << "  Level " << lvl << ": unknown parity, randomly assigned to "
-                      << (parity == 1 ? "positive" : "negative") << std::endl;
+            //std::cout << "  Level " << lvl << ": unknown parity, randomly assigned to "
+                     // << (parity == 1 ? "positive" : "negative") << std::endl;
         } else if (parity == -1) {
             // Negative parity in file → 0 in internal representation
             parity = 0;

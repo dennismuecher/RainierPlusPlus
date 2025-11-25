@@ -392,15 +392,12 @@ void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level,
                 
                 // Get levels in this E-J-π bin
                const auto& contLevels = nucleus_.getContinuumLevels(energyBin, selectedSpinBin, parity);
-                //const auto& contLevels = nucleus_.getContinuumLevels(energyBin, 1, parity);
-                std::cout <<"debug: " << energyBin <<" "<<selectedSpinBin << " " <<parity <<std::endl;
                 
                 if (!contLevels.empty()) {
                     // Randomly select a level within this bin
                     int randomIndex = rng_->Integer(contLevels.size());
                     level = contLevels[randomIndex];
                     excitationEnergy = level->getEnergy();
-                    std::cout <<"Found level " << excitationEnergy <<std::endl;
                 } else {
                     // If no levels in this exact bin, try to find nearby
                     // This can happen at energy boundaries
