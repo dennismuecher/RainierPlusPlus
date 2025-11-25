@@ -32,7 +32,7 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
                     config.levelDensity.aAsymptotic,
                     config.levelDensity.shellCorrectionW,
                     config.levelDensity.dampingGamma,
-                    nucleus.getA()
+                    A_
                 );
             }
         
@@ -40,8 +40,8 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
                 levelDensity_ = std::make_unique<ConstantTemperature>(
                     config.levelDensity.T,
                     config.levelDensity.E0,
-                     config.nucleus.A,
-                    config.nucleus.Z
+                     A_,
+                    Z
                 );
             }
             else {
@@ -52,21 +52,21 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
         if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::VON_EGIDY_05) {
             spinCutoff_ = std::make_unique<VonEgidy05>(
                 levelDensity_,
-                nucleus.getA(),
+                A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::SINGLE_PARTICLE) {
             spinCutoff_ = std::make_unique<SingleParticle>(
                 levelDensity_,
-                nucleus.getA(),
+                A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::RIGID_SPHERE) {
             spinCutoff_ = std::make_unique<RigidSphere>(
                 levelDensity_,
-                nucleus.getA(),
+                A_,
                 config.spinCutoff.useOsloShift ? config.spinCutoff.osloShift : 0.0
             );
         }
@@ -74,8 +74,8 @@ Nucleus::Nucleus(int Z, int A, const Config& config)
         else if (config.spinCutoff.model == Config::SpinCutoffConfig::Model::TALYS) {
             spinCutoff_ = std::make_unique<TALYSSpinCutoff>(
                 levelDensity_,
-                nucleus.getA(),
-                nucleus.getSn(),
+                A_
+                Sn_
                 config.spinCutoff.spinCutoffD,
                 config.spinCutoff.Ed,
                 config.levelDensity.aAsymptotic,

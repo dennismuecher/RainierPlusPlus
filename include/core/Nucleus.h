@@ -141,21 +141,7 @@ public:
      */
     void setSn(double Sn) { Sn_ = Sn; }
     double getSn() const { return Sn_; }
-    
-    /**
-         * @brief Set level density model for continuum construction
-         */
-        void setLevelDensityModel(const LevelDensityModel* model) {
-            levelDensity_ = model;
-        }
-        
-        /**
-         * @brief Set spin cutoff model for continuum construction
-         */
-        void setSpinCutoffModel(const SpinCutoffModel* model) {
-            spinCutoff_ = model;
-        }
-
+       
 private:
     // Index for continuum level storage: maps (energyBin, spinBin, parity) to vector of levels
     using ContinuumKey = std::tuple<int, int, int>;
