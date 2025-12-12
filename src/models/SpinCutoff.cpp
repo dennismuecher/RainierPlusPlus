@@ -19,7 +19,7 @@ double SpinCutoffModel::getSpinDistribution(double Ex, double spin) const {
     double distribution = (2.0 * spin + 1.0) * 
                          std::exp(-std::pow(spin + 0.5, 2) / (2.0 * sigma2)) / 
                          sigma2;
-    
+    std::cout <<"spin cut off for Ex = " <<Ex << " and spin: " <<spin<<" : " <<distribution <<std::endl;
     return distribution;
 }
 

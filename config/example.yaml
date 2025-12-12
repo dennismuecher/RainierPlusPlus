@@ -103,7 +103,7 @@ levelDensity:
 # Available models: VON_EGIDY_05, VON_EGIDY_09, TALYS, SINGLE_PARTICLE, RIGID_SPHERE, USER_DEFINED
 
 spinCutoff:
-  model: TALYS                       # Choose spin cutoff model
+  model: VON_EGIDY_05                       # Choose spin cutoff model
 
   # ---------------------------------------------------------------------------
   # TALYS parameters
