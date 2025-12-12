@@ -85,6 +85,17 @@ Config Config::loadFromFile(const std::string& filename) {
                 config.initialExcitation.populationFile = 
                     init["FULL_REACTION"]["populationFile"].as<std::string>();
             }
+            
+            // BETA_DECAY mode parameters
+            if (init["BETA_DECAY"]) {
+                auto beta = init["BETA_DECAY"];
+                if (beta["parentSpin"])
+                    config.initialExcitation.parentSpin = beta["parentSpin"].as<double>();
+                if (beta["parentParity"])
+                    config.initialExcitation.parentParity = beta["parentParity"].as<int>();
+                if (beta["Qbeta"])
+                    config.initialExcitation.Qbeta = beta["Qbeta"].as<double>();
+            }
         }
         
         // =================================================================
@@ -428,6 +439,8 @@ void Config::saveToFile(const std::string& filename) const {
         case InitialExcitationConfig::Mode::SELECT: modeStr = "SELECT"; break;
         case InitialExcitationConfig::Mode::SPREAD: modeStr = "SPREAD"; break;
         case InitialExcitationConfig::Mode::FULL_REACTION: modeStr = "FULL_REACTION"; break;
+        case InitialExcitationConfig::Mode::BETA_DECAY: modeStr = "BETA_DECAY"; break;
+
     }
     out << YAML::Key << "mode" << YAML::Value << modeStr;
     
@@ -499,6 +512,14 @@ bool Config::validate(std::string& errorMsg) const {
                       std::to_string(sum) + ")";
             return false;
         }
+        
+    }
+    
+    if (initialExcitation.mode == InitialExcitationConfig::Mode::BETA_DECAY) {
+        if (initialExcitation.Qbeta <= 0.0) {
+            errorMsg = "Qbeta must be positive for BETA_DECAY mode";
+            return false;
+        }
     }
     
     return true;
@@ -525,6 +546,11 @@ void Config::print() const {
             break;
         case InitialExcitationConfig::Mode::FULL_REACTION: 
             std::cout << "FULL_REACTION\n";
+            break;
+        case InitialExcitationConfig::Mode::BETA_DECAY:
+            std::cout << "BETA_DECAY (parent J=" << initialExcitation.parentSpin
+                     << (initialExcitation.parentParity > 0 ? "+" : "-")
+                     << ", Q=" << initialExcitation.Qbeta << " MeV)\n";
             break;
     }
     

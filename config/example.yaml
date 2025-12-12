@@ -19,7 +19,7 @@ nucleus:
 # Available modes: SINGLE, SELECT, SPREAD, FULL_REACTION
 
 initialExcitation:
-  mode: SINGLE                       # Choose excitation mode
+  mode: BETA_DECAY                       # Choose excitation mode
 
   # ---------------------------------------------------------------------------
   # SINGLE mode (DICEBOX-like): Single initial state
@@ -57,7 +57,15 @@ initialExcitation:
   # ---------------------------------------------------------------------------
   FULL_REACTION:
     populationFile: talys_population.dat
-
+    
+  # ---------------------------------------------------------------------------
+  # beta decay mode
+  # ---------------------------------------------------------------------------
+  BETA_DECAY:
+    parentSpin: 2.0        # Parent nucleus J = 2
+    parentParity: -1       # Parent nucleus π = -
+    Qbeta: 8.5            # Q-value in MeV
+    
 # =============================================================================
 # LEVEL DENSITY
 # =============================================================================

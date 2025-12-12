@@ -84,6 +84,9 @@ private:
     double getInternalConversionCoeff(double Egamma, int transType, double mixingRatio);
     bool isInternallyConverted(double icc);
     
+    void selectBetaDecayState(std::shared_ptr<Level>& level, double& excitationEnergy);
+    std::vector<double> getAllowedSpins(double parentSpin) const;
+    
     Nucleus& nucleus_;
     Config config_;
     int realization_;

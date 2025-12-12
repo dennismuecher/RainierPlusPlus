@@ -107,7 +107,7 @@ public:
 
     // Initial excitation configuration
     struct InitialExcitationConfig {
-        enum class Mode { SINGLE, SELECT, SPREAD, FULL_REACTION };
+        enum class Mode { SINGLE, SELECT, SPREAD, FULL_REACTION, BETA_DECAY };
         Mode mode = Mode::SPREAD;
         
         // SINGLE mode parameters
@@ -130,6 +130,11 @@ public:
         
         // FULL_REACTION mode
         std::string populationFile = "";
+
+        // BETA_DECAY mode parameters
+        double parentSpin = 0.0;      // Parent nucleus ground state spin
+        int parentParity = 1;          // Parent nucleus ground state parity (+1 or -1)
+        double Qbeta = 10.0;          // Beta decay Q-value (MeV)
     };
 
     // Parity distribution configuration

@@ -421,6 +421,10 @@ void DecaySimulator::selectInitialState(std::shared_ptr<Level>& level,
             // To be implemented later
             throw std::runtime_error("FULL_REACTION mode not yet implemented");
             break;
+            
+        case Config::InitialExcitationConfig::Mode::BETA_DECAY:
+                selectBetaDecayState(level, excitationEnergy);
+                break;
     }
 }
 
@@ -813,6 +817,126 @@ double DecaySimulator::getInternalConversionCoeff(double Egamma, int transType,
 bool DecaySimulator::isInternallyConverted(double icc) {
     double probability = icc / (1.0 + icc);
     return (rng_->Uniform(1.0) < probability);
+}
+
+std::vector<double> DecaySimulator::getAllowedSpins(double parentSpin) const {
+    // For allowed beta transitions (Fermi + Gamow-Teller):
+    // Fermi: ΔJ = 0, no parity change
+    // Gamow-Teller: ΔJ = 0, ±1, no parity change
+    
+    std::vector<double> spins;
+    
+    // Handle half-integer spins properly
+    if (parentSpin >= 1.0) {
+        spins.push_back(parentSpin - 1.0);
+    }
+    spins.push_back(parentSpin);
+    spins.push_back(parentSpin + 1.0);
+    
+    // Remove negative spins
+    spins.erase(std::remove_if(spins.begin(), spins.end(),
+                               [](double s) { return s < 0.0; }),
+                spins.end());
+    
+    return spins;
+}
+
+void DecaySimulator::selectBetaDecayState(std::shared_ptr<Level>& level,
+                                         double& excitationEnergy) {
+    double Qbeta = config_.initialExcitation.Qbeta;
+    double parentSpin = config_.initialExcitation.parentSpin;
+    int parentParity = config_.initialExcitation.parentParity;
+    
+    // Get allowed spins for beta decay (parent ± 1, same parity)
+    std::vector<double> allowedSpins = getAllowedSpins(parentSpin);
+    
+    // Build cumulative distribution: S(E) ∝ (Q - E)^5 * rho(E)
+    std::vector<double> energies;
+    std::vector<double> cumulativeStrength;
+    double cumSum = 0.0;
+    
+    // Sample energies from 0 to Qbeta
+    const int numSamples = 200;
+    const double dE = Qbeta / numSamples;
+    
+    for (int i = 1; i < numSamples; ++i) {
+        double E = i * dE;
+        if (E >= Qbeta) break;
+        
+        // Phase space factor: (Q - E)^5 for allowed transitions
+        double phaseSpace = std::pow(Qbeta - E, 5.0);
+        
+        // Average level density over allowed spins
+        double avgRho = 0.0;
+        for (double J : allowedSpins) {
+            avgRho += levelDensity_->getDensity(E, J, parentParity);
+        }
+        avgRho /= allowedSpins.size();
+        
+        double strength = phaseSpace * avgRho;
+        cumSum += strength;
+        
+        energies.push_back(E);
+        cumulativeStrength.push_back(cumSum);
+    }
+    
+    if (cumSum == 0.0) {
+        std::cerr << "Warning: No beta strength found! Using parent spin directly.\n";
+        excitationEnergy = Qbeta * 0.5;
+        level = nullptr;
+        return;
+    }
+    
+    // Sample energy from distribution
+    double rand = rng_->Uniform(0.0, cumSum);
+    auto it = std::lower_bound(cumulativeStrength.begin(),
+                              cumulativeStrength.end(), rand);
+    int idx = std::distance(cumulativeStrength.begin(), it);
+    excitationEnergy = energies[idx];
+    
+    // Sample spin from allowed spins (weighted by rho at this energy)
+    std::vector<double> spinWeights;
+    double totalWeight = 0.0;
+    for (double J : allowedSpins) {
+        double w = levelDensity_->getDensity(excitationEnergy, J, parentParity);
+        spinWeights.push_back(w);
+        totalWeight += w;
+    }
+    
+    rand = rng_->Uniform(0.0, totalWeight);
+    cumSum = 0.0;
+    double selectedSpin = allowedSpins[0];
+    for (size_t i = 0; i < allowedSpins.size(); ++i) {
+        cumSum += spinWeights[i];
+        if (rand <= cumSum) {
+            selectedSpin = allowedSpins[i];
+            break;
+        }
+    }
+    
+    // Find matching level
+    if (excitationEnergy < nucleus_.getCriticalEnergy()) {
+        // Search discrete levels
+        for (int i = 0; i < nucleus_.getNumDiscreteLevels(); ++i) {
+            auto discLevel = nucleus_.getDiscreteLevel(i);
+            if (std::abs(discLevel->getEnergy() - excitationEnergy) < 0.1 &&
+                std::abs(discLevel->getSpin() - selectedSpin) < 0.1 &&
+                discLevel->getParity() == parentParity) {
+                level = discLevel;
+                return;
+            }
+        }
+    }
+    
+    // Use continuum level
+    int energyBin = nucleus_.getEnergyBin(excitationEnergy);
+    int spinBin = Level::spinToBin(selectedSpin, nucleus_.isEvenA());
+    
+    const auto& levels = nucleus_.getContinuumLevels(energyBin, spinBin, parentParity);
+    if (!levels.empty()) {
+        int randomIndex = rng_->Integer(levels.size());
+        level = levels[randomIndex];
+    }
 }
 
 } // namespace rainier
