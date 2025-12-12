@@ -19,7 +19,7 @@ nucleus:
 # Available modes: SINGLE, SELECT, SPREAD, FULL_REACTION
 
 initialExcitation:
-  mode: SPREAD                       # Choose excitation mode
+  mode: SINGLE                       # Choose excitation mode
 
   # ---------------------------------------------------------------------------
   # SINGLE mode (DICEBOX-like): Single initial state
